@@ -33,6 +33,10 @@ _err() {
 	exit 1
 }
 
+_q() {
+	"$@" &> /dev/null
+}
+
 _if() {
 	local eval=false
 	[ "$1" = "-e" ] && eval=true && shift
