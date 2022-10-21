@@ -70,11 +70,11 @@ _fb-cmd() {
 	case "$1" in
 		-f|--full) full=true; shift ;;
 	esac
-	local arg r
+	local arg
 	for arg in "$@"; do
-		r="$(which $arg)" || continue
+		command -v "$arg" || continue
 		if $full
-			then echo "$r"
+			then which "$arg"
 			else echo "$arg"
 		fi
 		return
