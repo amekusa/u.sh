@@ -106,14 +106,19 @@ _subst() {
 _file() {
 	local path="$1"; shift
 	local dir=false
+	local realpath=false
+	local basename=false
 	local mod own
-	while [ "$#" -gt 0 ]; do
+	while [ -n "$1" ]; do
 		case "$1" in
-			-d|--dir) dir=true; shift ;;
-			-m|--mod) mod="$2"; shift; shift ;;
-			-o|--own) own="$2"; shift; shift ;;
-			*) echo "_file: invalid argument: $1"; return 1
+			-d|--dir) dir=true ;;
+			-r|--realpath) realpath=true ;;
+			-b|--basename) basename=true ;;
+			-m|--mod) mod="$2"; shift ;;
+			-o|--own) own="$2"; shift ;;
+			*) echo "[ERROR] _file(): invalid argument: $1"; return 1
 		esac
+		shift
 	done
 	if $dir
 		then [ -d "$path" ] || mkdir "$path" || return 1
@@ -121,7 +126,10 @@ _file() {
 	fi
 	[ -z "$mod" ] || chmod "$mod" "$path" || return 2
 	[ -z "$own" ] || chown "$own" "$path" || return 2
-	return 0
+	local r="$path"
+	$realpath && r="$(realpath "$r")"
+	$basename && r="$(basename "$r")"
+	echo "$r"
 }
 
 _dir() {
