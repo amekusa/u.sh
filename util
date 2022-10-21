@@ -1,0 +1,219 @@
+##
+#  shlib/util
+# ------------ -
+#  author: Satoshi Soma (https://amekusa.com)
+# ============================================ *
+
+_err() {
+	[ -z "$*" ] || echo "ERROR: $*"
+	exit 1
+}
+
+_if() {
+	local eval=false
+	[ "$1" = "-e" ] && eval=true && shift
+	local t f mode
+	local cond=("$1")
+	while shift; do
+		case "$1" in
+		?)
+			t="$2"
+			[ "$3" = ":" ] && f="$4"
+			mode=1; break
+			;;
+		?:)
+			f="$2"
+			mode=2; break
+			;;
+		esac
+		cond+=("$1")
+	done
+	if [ -z "$mode" ]; then
+		echo "ERROR: _if(): syntax error"
+		echo "  _if <cond> ? <A> : <B>"
+		echo "  _if <cond> ?: <alt>"
+		exit 1
+	fi
+	case "$mode" in
+	1)
+		if $eval
+			then eval "${cond[*]}" &> /dev/null
+			else "${cond[@]}" &> /dev/null
+		fi
+		;;
+	2)
+		if $eval
+			then t="$(eval "${cond[*]}")"
+			else t="$("${cond[@]}")"
+		fi
+		;;
+	esac
+	if [ "$?" -eq 0 ]
+		then echo "$t"
+		else echo "$f"
+	fi
+}
+
+_fb() {
+	local arg
+	for arg in "$@"; do
+		if [ -n "$arg" ]; then
+			echo "$arg"
+			return
+		fi
+	done
+	return 1
+}
+
+_fb-cmd() {
+	local full=false
+	case "$1" in
+		-f|--full) full=true; shift ;;
+	esac
+	local arg r
+	for arg in "$@"; do
+		r="$(which $arg)" || continue
+		if $full
+			then echo "$r"
+			else echo "$arg"
+		fi
+		return
+	done
+	return 1
+}
+
+_chk-user() {
+	[ "$(whoami)" = "$1" ] || _err "run as $1"
+}
+
+_chk-cmd() {
+	local arg
+	for arg in "$@"; do
+		command -v "$arg" || _err "command '$arg' is not found"
+	done
+}
+
+_subst() {
+	local arg name value pat
+	for arg in "$@"; do
+		name="${arg%%=*}"
+		value="${arg:$((${#name}+1))}"
+		pat="${pat}s|{{ $name }}|$value|g;"
+	done
+	sed "$pat"
+}
+
+_file() {
+	local path="$1"; shift
+	local dir=false
+	local mod own
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+			-d|--dir) dir=true; shift ;;
+			-m|--mod) mod="$2"; shift; shift ;;
+			-o|--own) own="$2"; shift; shift ;;
+			*) echo "_file: invalid argument: $1"; return 1
+		esac
+	done
+	if $dir
+		then [ -d "$path" ] || mkdir "$path" || return 1
+		else [ -f "$path" ] || touch "$path" || return 1
+	fi
+	[ -z "$mod" ] || chmod "$mod" "$path" || return 2
+	[ -z "$own" ] || chown "$own" "$path" || return 2
+	return 0
+}
+
+_dir() {
+	_file "$@" -d
+}
+
+_uncomment() {
+	local search="$1"; shift
+	local file="$1"; shift
+	local expr="/${search}/ s/^#+\s*//"
+	if [ -n "$file" ]
+		then sed -ri "$expr" "$file"
+		else sed -r "$expr"
+	fi
+}
+
+_save-var() {
+	local key="$1"; shift
+	local value="$1"; shift
+	local file="$1"; shift
+	[ -f "$file" ] || touch "$file"
+	local temp="$(mktemp)"
+	local find="^([[:space:]]*)$key="
+	local found=false
+	local line
+	while IFS= read -r line; do
+		if [[ $line =~ $find ]]; then
+			line="${BASH_REMATCH[1]}$key=$value"
+			found=true
+		fi
+		echo "$line" >> "$temp"
+	done < "$file"
+	$found || echo "$key=$value" >> "$temp"
+	cat "$temp" > "$file"
+	rm "$temp"
+}
+
+_load-var() {
+	local key="$1"; shift
+	local file="$1"; shift
+	local find="^[[:space:]]*$key=\"?([^\"]*)\"?"
+	local line
+	while IFS= read -r line; do
+		if [[ $line =~ $find ]]; then
+			echo "${BASH_REMATCH[1]}"
+			return
+		fi
+	done < "$file"
+	return 1
+}
+
+# insert/update a section in a file
+_section() {
+	local name="$1"; shift # section name
+	local file="$1"; shift # file to write
+	local ins="$(cat)"     # content to insert (stdin)
+	local temp="$(mktemp)"
+	local start="# [$name:START]" # section start marker
+	local end="# [$name:END]"     # section end marker
+	local ctx=0 # context
+	local line
+	while IFS= read -r line; do
+		case $ctx in
+		0) # before the section
+			echo "$line" >> "$temp"
+			[ "$line" = "$start" ] || continue
+			echo "$ins" >> "$temp"
+			ctx=1
+			;;
+		1) # in the section
+			[ "$line" = "$end" ] || continue
+			echo "$line" >> "$temp"
+			ctx=2
+			;;
+		2) # after the section
+			echo "$line" >> "$temp"
+			;;
+		esac
+	done < "$file"
+
+	case $ctx in
+	0) # section not found
+		echo >> "$temp"
+		echo "$start" >> "$temp"
+		echo "$ins" >> "$temp"
+		echo "$end" >> "$temp"
+		;;
+	1) # end marker missing
+		echo "$end" >> "$temp"
+		;;
+	esac
+
+	cat "$temp" > "$file"
+	rm "$temp"
+}
