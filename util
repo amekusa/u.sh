@@ -56,7 +56,7 @@ _if() {
 		echo "ERROR: _if(): syntax error"
 		echo "  _if <cond> ? <A> : <B>"
 		echo "  _if <cond> ?: <alt>"
-		exit 1
+		return 1
 	fi
 	case "$mode" in
 	1)
