@@ -121,6 +121,12 @@ _chk-cmd() {
 	done
 }
 
+_join() {
+	local sep="$1"; shift
+	local first="$1"; shift
+	printf "%s" "$first" "${@/#/$sep}"
+}
+
 _subst() {
 	local arg name value pat
 	for arg in "$@"; do
