@@ -44,12 +44,12 @@ _if() {
 	local cond=("$1")
 	while shift; do
 		case "$1" in
-		?)
+		'?')
 			t="$2"
 			[ "$3" = ":" ] && f="$4"
 			mode=1; break
 			;;
-		?:)
+		'?:')
 			f="$2"
 			mode=2; break
 			;;
