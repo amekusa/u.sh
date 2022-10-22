@@ -117,7 +117,7 @@ _chk-user() {
 _chk-cmd() {
 	local arg
 	for arg in "$@"; do
-		command -v "$arg" || _err "command '$arg' is not found"
+		command -v "$arg" &> /dev/null || _err "command '$arg' is not found"
 	done
 }
 
