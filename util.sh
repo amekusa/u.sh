@@ -100,7 +100,7 @@ _fb-cmd() {
 	esac
 	local arg
 	for arg in "$@"; do
-		command -v "$arg" || continue
+		command -v "$arg" &> /dev/null || continue
 		if $full
 			then which "$arg"
 			else echo "$arg"
