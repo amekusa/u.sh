@@ -29,7 +29,7 @@
 ##
 
 _err() {
-	[ -z "$*" ] || echo "ERROR: $*"
+	[ -z "$*" ] || echo "[ERROR] $*"
 	exit 1
 }
 
