@@ -1,5 +1,21 @@
 # shlib
-Utility library for shell scripts written by [amekusa](https://github.com/amekusa)
+Utility library for shell scripts
+
+## INSTALLATION
+Install as a git submodule:
+
+```sh
+git submodule add https://github.com/amekusa/shlib.git
+```
+
+Initialize/Update submodule:
+
+```sh
+git submodule init
+git submodule update
+```
+
+## LICENSE
 
 	MIT License
 
