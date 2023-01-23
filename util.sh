@@ -29,7 +29,7 @@
 ##
 
 _err() {
-	[ -z "$*" ] || echo "ERROR: $*"
+	[ -z "$*" ] || echo "[ERROR] $*"
 	exit 1
 }
 
@@ -44,12 +44,12 @@ _if() {
 	local cond=("$1")
 	while shift; do
 		case "$1" in
-		?)
+		'?')
 			t="$2"
 			[ "$3" = ":" ] && f="$4"
 			mode=1; break
 			;;
-		?:)
+		'?:')
 			f="$2"
 			mode=2; break
 			;;
@@ -100,7 +100,7 @@ _fb-cmd() {
 	esac
 	local arg
 	for arg in "$@"; do
-		command -v "$arg" || continue
+		command -v "$arg" &> /dev/null || continue
 		if $full
 			then which "$arg"
 			else echo "$arg"
@@ -117,8 +117,14 @@ _chk-user() {
 _chk-cmd() {
 	local arg
 	for arg in "$@"; do
-		command -v "$arg" || _err "command '$arg' is not found"
+		command -v "$arg" &> /dev/null || _err "command '$arg' is not found"
 	done
+}
+
+_join() {
+	local sep="$1"; shift
+	local first="$1"; shift
+	printf "%s" "$first" "${@/#/$sep}"
 }
 
 _subst() {
