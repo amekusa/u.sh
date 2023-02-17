@@ -136,3 +136,11 @@ _subst() {
 	done
 	sed "$pat"
 }
+
+_in() {
+	local needle="$1"; shift
+	for each in "$@"; do
+		[ "$needle" = "$each" ] && return 0
+	done
+	return 1
+}
