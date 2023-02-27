@@ -28,10 +28,102 @@
 #
 ##
 
+# ---- vars ----
 
+[ -z "$_SAVED_DIRS" ] && export _SAVED_DIRS=()
+
+
+# ---- functions ----
+
+# reload the login shell
 reload() {
 	echo "Reloading the login shell ($SHELL)..."
 	exec "$SHELL" --login
+}
+
+# save dir
+sd() {
+	if [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0            :  Save the current dir
+		  $0 <dir>      :  Save the specified dir
+		  $0 -l, --list :  List the saved dirs
+		EOF
+		return
+	fi
+	local dir
+	if [ -z "$1" ]; then
+		dir="$(pwd -L)"
+	else
+		case "$1" in
+		-l|--list)
+			local i=0
+			local each
+			for each in "${_SAVED_DIRS[@]}"; do
+				echo "#$i $each"
+				((i++))
+			done
+			return
+			;;
+		/*|~*)
+			dir="$1"
+			;;
+		*)
+			dir="$(pwd -L)/$1"
+		esac
+	fi
+	# if the number of saves >= 10, remove the first entry
+	[ "${#_SAVED_DIRS}" -ge 10 ] && _SAVED_DIRS=("${_SAVED_DIRS[@]:1}")
+
+	_SAVED_DIRS+=("$dir")
+}
+
+# go to saved dir
+wd() {
+	if [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0          :  List the saved dirs
+		  $0 -        :  Go to the last saved dir
+		  $0 <index>  :  Go to the saved dir specified by the index
+		  $0 <string> :  Go to the saved dir including the string
+		EOF
+		return
+	fi
+	if [ -z "$1" ]; then
+		sd -l
+		return
+	fi
+	if [ -z "$_SAVED_DIRS" ]; then
+		echo "[ERROR] no saved dir"
+		return 1
+	fi
+	local dir
+	case "$1" in
+	-)
+		# the last index
+		dir="${_SAVED_DIRS[@]:(${#_SAVED_DIRS}-1):1}"
+		;;
+	[0-9])
+		# index
+		dir="${_SAVED_DIRS[@]:$1:1}"
+		;;
+	*)
+		# string match
+		local each
+		for each in "${_SAVED_DIRS[@]}"; do
+			if [[ "$each" = *"$1"* ]]; then
+				dir="$each"
+				break
+			fi
+		done
+	esac
+	if [ -z "$dir" ]; then
+		echo "[ERROR] directory not found"
+		return 1
+	fi
+	cd "$dir"
 }
 
 # mkdir & cd
