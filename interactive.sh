@@ -49,8 +49,9 @@ sd() {
 		  $0            :  Save the current dir
 		  $0 <dir>      :  Save the specified dir
 		  $0 -l, --list :  List the saved dirs
+
 		EOF
-		return
+		return 1
 	fi
 	local dir
 	if [ -z "$1" ]; then
@@ -88,8 +89,9 @@ wd() {
 		  $0 -        :  Go to the last saved dir
 		  $0 <index>  :  Go to the saved dir specified by the index
 		  $0 <string> :  Go to the saved dir including the string
+
 		EOF
-		return
+		return 1
 	fi
 	if [ -z "$1" ]; then
 		sd -l
@@ -128,9 +130,12 @@ wd() {
 
 # mkdir & cd
 mkcd() {
-	if [ -z "$1" ]; then
-		echo "Usage:"
-		echo "  $0 <new-dir>"
+	if [ -z "$1" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0 <new-dir>
+
+		EOF
 		return 1
 	fi
 	if [ -d "$1" ]; then
@@ -144,9 +149,12 @@ mkcd() {
 
 # find
 f() {
-	if [ -z "$1" ]; then
-		echo "Usage:"
-		echo "  $0 <query> [basedir] [maxdepth]"
+	if [ -z "$1" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0 <query> [basedir] [maxdepth]
+
+		EOF
 		return 1
 	fi
 	local dir='.'; [ -z "$2" ] || dir="$2"
@@ -156,9 +164,12 @@ f() {
 
 # find & cd
 fcd() {
-	if [ -z "$1" ]; then
-		echo "Usage:"
-		echo "  $0 <query> [basedir] [maxdepth]"
+	if [ -z "$1" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0 <query> [basedir] [maxdepth]
+
+		EOF
 		return 1
 	fi
 	local dir='.'; [ -z "$2" ] || dir="$2"
@@ -173,10 +184,13 @@ fcd() {
 
 # site health checker
 http() {
-	if [ -z "$1" ]; then
-		echo "Usage:"
-		echo "  $0 <location>"
-		echo "  $0 <location> -s (for HTTPS)"
+	if [ -z "$1" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0 <location>
+		  $0 <location> -s (for HTTPS)
+
+		EOF
 		return 1
 	fi
 	local protocol=http
@@ -190,9 +204,12 @@ http() {
 
 # site health checker (HTTPS)
 https() {
-	if [ -z "$1" ]; then
-		echo "Usage:"
-		echo "  $0 <location>"
+	if [ -z "$1" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0 <location>
+
+		EOF
 		return 1
 	fi
 	http "$1" -s
