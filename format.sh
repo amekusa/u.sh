@@ -56,3 +56,15 @@ RST="${ESC}0m"
 # special chars
 LF=$'\n'
 TAB=$'\t'
+
+_success() {
+	echo -e "[${GRN}SUCCESS${RST}] $*"
+}
+
+_error() {
+	echo -e "[${RED}ERROR${RST}] $*"
+}
+
+_warn() {
+	echo -e "[${YLW}WARN${RST}] $*"
+}
