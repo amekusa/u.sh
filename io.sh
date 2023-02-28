@@ -61,6 +61,37 @@ _dir() {
 	_file "$@" -d
 }
 
+_symlink() {
+	local force=false
+	if [ "$1" = "-F" ]; then force=true; shift; fi
+	local src="$1"
+	local dst="$2"
+	if [ ! -e "$src" ]; then
+		echo "[FAIL] file not found: $src"
+		return 1
+	fi
+	if [ -e "$dst" ]; then
+		if $force; then
+			if ! _del "$dst"; then
+				echo "[FAIL] file already exists and cannot be deleted: $dst"
+				return 1
+			fi
+		else
+			echo "[FAIL] file already exists: $dst"
+			return 1
+		fi
+	fi
+	ln -sn "$src" "$dst"
+}
+
+_del() {
+	[ -e "$1" ] || return 0
+	if [ -d "$1" ];
+		then rm -rf "$1"
+		else rm "$1"
+	fi
+}
+
 _uncomment() {
 	local search="$1"; shift
 	local file="$1"; shift
