@@ -80,6 +80,11 @@ sd() {
 	_SAVED_DIRS+=("$dir")
 }
 
+# cd & sd
+scd() {
+	cd $* && sd
+}
+
 # go to saved dir
 wd() {
 	if [ "$1" = "-h" ]; then
