@@ -82,6 +82,10 @@ _if() {
 	fi
 }
 
+_has-cmd() {
+	command -v "$*" &> /dev/null
+}
+
 _fb() {
 	local arg
 	for arg in "$@"; do
@@ -117,7 +121,7 @@ _chk-user() {
 _chk-cmd() {
 	local arg
 	for arg in "$@"; do
-		command -v "$arg" &> /dev/null || _die "command '$arg' is not found"
+		_has-cmd "$arg" || _die "command '$arg' is not found"
 	done
 }
 
