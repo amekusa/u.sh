@@ -28,7 +28,7 @@
 #
 ##
 
-_err() {
+_die() {
 	[ -z "$*" ] || echo "[ERROR] $*"
 	exit 1
 }
@@ -111,13 +111,13 @@ _fb-cmd() {
 }
 
 _chk-user() {
-	[ "$(whoami)" = "$1" ] || _err "run as $1"
+	[ "$(whoami)" = "$1" ] || _die "run as $1"
 }
 
 _chk-cmd() {
 	local arg
 	for arg in "$@"; do
-		command -v "$arg" &> /dev/null || _err "command '$arg' is not found"
+		command -v "$arg" &> /dev/null || _die "command '$arg' is not found"
 	done
 }
 
