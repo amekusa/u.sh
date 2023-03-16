@@ -98,11 +98,11 @@ _fb-cmd() {
 	case "$1" in
 		-f|--full) full=true; shift ;;
 	esac
-	local arg
+	local arg found
 	for arg in "$@"; do
-		command -v "$arg" &> /dev/null || continue
+		found="$(which "$arg")" || continue
 		if $full
-			then which "$arg"
+			then echo "$found"
 			else echo "$arg"
 		fi
 		return
