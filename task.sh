@@ -142,7 +142,7 @@ ksat() {
 	_TASK_CURRENT=""
 }
 
-task-fail() {
+fail() {
 	echo "TASK: $_TASK_CURRENT > ERROR!"
 	[ -z "$*" ] || echo " > $*"
 	_save-var "$_TASK_CURRENT" FAILED "$_TASK_SAVE_TO"
