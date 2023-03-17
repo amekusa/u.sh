@@ -11,8 +11,7 @@ git submodule add https://github.com/amekusa/shlib.git
 Initialize/Update submodule:
 
 ```sh
-git submodule init
-git submodule update
+git submodule update --init
 ```
 
 ## LICENSE
