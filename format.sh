@@ -1,3 +1,5 @@
+[ -n "$_SHLIB_format" ] && return; readonly _SHLIB_format=1
+
 ##
 #  shlib/format
 # -------------- -

@@ -1,3 +1,5 @@
+[ -n "$_SHLIB_interactive" ] && return; readonly _SHLIB_interactive=1
+
 ##
 #  shlib/interactive
 # ------------------- -
@@ -27,8 +29,6 @@
 #  SOFTWARE.
 #
 ##
-
-# ---- vars ----
 
 [ -z "$_SAVED_DIRS" ] && export _SAVED_DIRS=()
 
