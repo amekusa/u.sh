@@ -150,3 +150,11 @@ _in() {
 	done
 	return 1
 }
+
+_lower() {
+	echo "$1" | tr '[A-Z]' '[a-z]'
+}
+
+_upper() {
+	echo "$1" | tr '[a-z]' '[A-Z]'
+}
