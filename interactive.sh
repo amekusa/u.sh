@@ -1,4 +1,4 @@
-[ -n "$_SHLIB_interactive" ] && return; readonly _SHLIB_interactive=1
+[ -n "$_shlib_interactive" ] && return; readonly _shlib_interactive=1
 
 ##
 #  shlib/interactive

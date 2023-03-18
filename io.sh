@@ -1,4 +1,4 @@
-[ -n "$_SHLIB_io" ] && return; readonly _SHLIB_io=1
+[ -n "$_shlib_io" ] && return; readonly _shlib_io=1
 
 ##
 #  shlib/io

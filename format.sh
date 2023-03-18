@@ -1,4 +1,4 @@
-[ -n "$_SHLIB_format" ] && return; readonly _SHLIB_format=1
+[ -n "$_shlib_format" ] && return; readonly _shlib_format=1
 
 ##
 #  shlib/format

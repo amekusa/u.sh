@@ -1,4 +1,4 @@
-[ -n "$_SHLIB_task" ] && return; readonly _SHLIB_task=1
+[ -n "$_shlib_task" ] && return; readonly _shlib_task=1
 
 ##
 #  shlib/task
@@ -30,41 +30,41 @@
 #
 ##
 
-_SHLIB_BASE="$(dirname "${BASH_SOURCE[0]}")"
-. "$_SHLIB_BASE/util.sh"
-. "$_SHLIB_BASE/io.sh"
+_shlib_base="$(dirname "${BASH_SOURCE[0]}")"
+. "$_shlib_base/util.sh"
+. "$_shlib_base/io.sh"
 
-_TASK_SAVE_TO=""
-_TASK_EXEC="ALL"
-_TASK_OPT_LIST=false
-_TASK_OPT_FORCE=false
-_TASK_OPT_PROMPT=false
-_TASK_CURRENT=""
+_task_save_to=""
+_task_exec="ALL"
+_task_opt_list=false
+_task_opt_force=false
+_task_opt_prompt=false
+_task_current=""
 
 # Initialize task system
 task-system() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-s|--save-to)
-			[ -z "$_TASK_SAVE_TO" ] || _die "task save file already specified"
-			_TASK_SAVE_TO="$2"; shift
-			[ -f "$_TASK_SAVE_TO" ] || touch "$_TASK_SAVE_TO"
+			[ -z "$_task_save_to" ] || _die "task save file already specified"
+			_task_save_to="$2"; shift
+			[ -f "$_task_save_to" ] || touch "$_task_save_to"
 			;;
 		-l|--list)
-			_TASK_OPT_LIST=true
+			_task_opt_list=true
 			;;
 		-F|--force)
-			_TASK_OPT_FORCE=true
+			_task_opt_force=true
 			;;
 		-p|--prompt)
-			_TASK_OPT_PROMPT=true
+			_task_opt_prompt=true
 			;;
 		-*)
 			echo "invalid argument '$1'"
 			;;
 		*) # task selection
-			[ "$_TASK_EXEC" = "ALL" ] && _TASK_EXEC=()
-			_TASK_EXEC+=("$1")
+			[ "$_task_exec" = "ALL" ] && _task_exec=()
+			_task_exec+=("$1")
 			;;
 		esac
 		shift
@@ -84,12 +84,12 @@ task() {
 	[ -n "$task" ] || _die "argument missing"
 
 	# selective tasks
-	if [ "$_TASK_EXEC" != "ALL" ]; then
-		_in "$task" "${_TASK_EXEC[@]}" || return 1
+	if [ "$_task_exec" != "ALL" ]; then
+		_in "$task" "${_task_exec[@]}" || return 1
 	fi
 
 	# list mode
-	if $_TASK_OPT_LIST; then
+	if $_task_opt_list; then
 		local status="$(task-status "$task")"
 		if [ -z "$status" ];
 			then echo "$task"
@@ -99,10 +99,10 @@ task() {
 	fi
 
 	# check if the previous task finished
-	[ -z "$_TASK_CURRENT" ] || _die "the task:$_TASK_CURRENT is not done yet"
+	[ -z "$_task_current" ] || _die "the task:$_task_current is not done yet"
 
 	# check task status
-	if ! $_TASK_OPT_FORCE; then
+	if ! $_task_opt_force; then
 		is-task "$task" DONE NEVER && return 1
 	fi
 
@@ -115,7 +115,7 @@ task() {
 	fi
 
 	# prompt
-	if $_TASK_OPT_PROMPT; then
+	if $_task_opt_prompt; then
 		local answer
 		while true; do
 			echo "Run task:$task ?"
@@ -131,27 +131,27 @@ task() {
 
 	echo
 	echo "TASK: $task ..."
-	_TASK_CURRENT="$task"
+	_task_current="$task"
 }
 
 # Sets the current task status to DONE
 ksat() {
-	[ -n "$_TASK_CURRENT" ] || _die "no active task"
-	_save-var "$_TASK_CURRENT" DONE "$_TASK_SAVE_TO" || _die "failed to write: $_TASK_SAVE_TO"
-	echo "TASK: $_TASK_CURRENT > DONE"
-	_TASK_CURRENT=""
+	[ -n "$_task_current" ] || _die "no active task"
+	_save-var "$_task_current" DONE "$_task_save_to" || _die "failed to write: $_task_save_to"
+	echo "TASK: $_task_current > DONE"
+	_task_current=""
 }
 
 fail() {
-	echo "TASK: $_TASK_CURRENT > ERROR!"
+	echo "TASK: $_task_current > ERROR!"
 	[ -z "$*" ] || echo " > $*"
-	_save-var "$_TASK_CURRENT" FAILED "$_TASK_SAVE_TO"
+	_save-var "$_task_current" FAILED "$_task_save_to"
 	exit 1
 }
 
 # Returns task status
 task-status() {
-	_load-var "$1" "$_TASK_SAVE_TO"
+	_load-var "$1" "$_task_save_to"
 }
 
 # Checks task status
@@ -164,7 +164,7 @@ is-task() {
 set-task() {
 	local task="$1"
 	local status="$2"
-	_save-var "$task" "$status" "$_TASK_SAVE_TO" || _die "failed to write: $_TASK_SAVE_TO"
+	_save-var "$task" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 }
 
 reset-task() {
@@ -172,5 +172,5 @@ reset-task() {
 }
 
 reset-tasks() {
-	echo "" > "$_TASK_SAVE_TO"
+	echo "" > "$_task_save_to"
 }
