@@ -64,7 +64,7 @@ task-system() {
 			;;
 		*) # task selection
 			[ "$_task_exec" = "ALL" ] && _task_exec=()
-			_task_exec+=("$1")
+			_task_exec+=("$(_upper "$1")")
 			;;
 		esac
 		shift
@@ -85,7 +85,7 @@ task() {
 
 	# selective tasks
 	if [ "$_task_exec" != "ALL" ]; then
-		_in "$task" "${_task_exec[@]}" || return 1
+		_in "$(_upper "$task")" "${_task_exec[@]}" || return 1
 	fi
 
 	# list mode
