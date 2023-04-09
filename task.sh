@@ -59,6 +59,9 @@ task-system() {
 		-p|--prompt)
 			_task_opt_prompt=true
 			;;
+		--reset)
+			reset-tasks
+			;;
 		-*)
 			echo "invalid argument '$1'"
 			;;
