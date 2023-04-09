@@ -40,6 +40,7 @@ _task_opt_list=false
 _task_opt_force=false
 _task_opt_prompt=false
 _task_current=""
+_task_repeat=false
 
 # Initialize task system
 task-system() {
@@ -86,6 +87,9 @@ task() {
 	local task="$1"; shift
 	[ -n "$task" ] || _die "argument missing"
 
+	# repeat task?
+	local repeat=false
+
 	# selective tasks
 	if [ "$_task_exec" != "ALL" ]; then
 		_in "$(_upper "$task")" "${_task_exec[@]}" || return 1
@@ -109,22 +113,44 @@ task() {
 		is-task "$task" DONE NEVER && return 1
 	fi
 
-	# check dependencies
-	if [ "$1" = "-d" ]; then shift
-		local arg
-		for arg in "$@"; do
-			is-task "$arg" DONE || return 1
-		done
-	fi
+	# parse args
+	local context valid
+	while [ $# -gt 0 ]; do
+		valid=true
 
-	# prompt
-	if $_task_opt_prompt; then
+		case "$1" in
+		-*) # non-contextual args
+			context=""
+			case "$1" in
+			-r|--repeat)
+				repeat=true ;;
+			-d|--depend)
+				context=DEPS ;;
+			*) valid=false
+			esac
+			;;
+		*) # contextual args
+			case "$context" in
+			DEPS) # check dependencies
+				is-task "$1" DONE || return 1 ;;
+			*) valid=false
+			esac
+		esac
+
+		$valid || _die "invalid argument '$1'"
+		shift
+	done
+
+	if is-task "$task" REPEAT; then
+		repeat=true
+	elif $_task_opt_prompt; then # prompt mode
 		local answer
 		while true; do
 			echo "Run task:$task ?"
-			read -n 1 -p "[ (R)un / (S)kip / (N)ever / (D)one already ] " answer; echo
+			read -n 1 -p "[ (R)un / (A)lways / (S)kip / (N)ever / (D)one already ] " answer; echo
 			case "$answer" in
 			[Rr]) echo "> Run";          break ;;
+			[Aa]) echo "> Always";       repeat=true; break ;;
 			[Ss]) echo "> Skip";         return 1 ;;
 			[Nn]) echo "> Never";        set-task "$task" NEVER; return 1 ;;
 			[Dd]) echo "> Done already"; set-task "$task" DONE;  return 1 ;;
@@ -132,17 +158,21 @@ task() {
 		done
 	fi
 
+	_task_current="$task"
+	_task_repeat=$repeat
+
 	echo
 	echo "TASK: $task ..."
-	_task_current="$task"
 }
 
 # Sets the current task status to DONE
 ksat() {
 	[ -n "$_task_current" ] || _die "no active task"
-	_save-var "$_task_current" DONE "$_task_save_to" || _die "failed to write: $_task_save_to"
-	echo "TASK: $_task_current > DONE"
+	local status=DONE; $_task_repeat && status=REPEAT
+	_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	echo "TASK: $_task_current > $status"
 	_task_current=""
+	_task_repeat=false
 }
 
 fail() {
