@@ -84,7 +84,7 @@ sd() {
 	save+=("$dir")
 
 	# if the number of saves >= 10, remove the first entry
-	while [ "${#save}" -gt 10 ]; do
+	while [ "${#save[@]}" -gt 10 ]; do
 		save=("${save[@]:1}")
 	done
 
@@ -121,7 +121,7 @@ wd() {
 	case "$1" in
 	-)
 		# the last index
-		dir="${_SAVED_DIRS[@]:(${#_SAVED_DIRS}-1):1}"
+		dir="${_SAVED_DIRS[@]:(${#_SAVED_DIRS[@]}-1):1}"
 		;;
 	[0-9])
 		# index
