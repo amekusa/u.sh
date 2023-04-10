@@ -54,15 +54,15 @@ sd() {
 		return 1
 	fi
 	local dir
+	local each
 	if [ -z "$1" ]; then
 		dir="$(pwd -L)"
 	else
 		case "$1" in
 		-l|--list)
 			local i=0
-			local each
 			for each in "${_SAVED_DIRS[@]}"; do
-				echo "#$i $each"
+				echo "$i. $each"
 				((i++))
 			done
 			return
@@ -74,10 +74,21 @@ sd() {
 			dir="$(pwd -L)/$1"
 		esac
 	fi
-	# if the number of saves >= 10, remove the first entry
-	[ "${#_SAVED_DIRS}" -ge 10 ] && _SAVED_DIRS=("${_SAVED_DIRS[@]:1}")
+	[ "$dir" = "/" ] || dir="${dir%/}" # remove trailing slash
+	[ -n "$dir" ] || return
 
-	_SAVED_DIRS+=("$dir")
+	local save=()
+	for each in "${_SAVED_DIRS[@]}"; do
+		[ "$each" = "$dir" ] || save+=("$each")
+	done
+	save+=("$dir")
+
+	# if the number of saves >= 10, remove the first entry
+	while [ "${#save}" -gt 10 ]; do
+		save=("${save[@]:1}")
+	done
+
+	_SAVED_DIRS=("${save[@]}")
 }
 
 # cd & sd
