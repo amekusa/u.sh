@@ -83,7 +83,7 @@ sd() {
 	done
 	save+=("$dir")
 
-	# if the number of saves >= 10, remove the first entry
+	# if the number of saves > 10, remove the first entry
 	while [ "${#save[@]}" -gt 10 ]; do
 		save=("${save[@]:1}")
 	done
