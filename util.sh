@@ -134,13 +134,23 @@ _join() {
 }
 
 _subst() {
-	local arg name value pat
-	for arg in "$@"; do
-		name="${arg%%=*}"
-		value="${arg:$((${#name}+1))}"
-		pat="${pat}s|{{ $name }}|$value|g;"
+	local pat="{{%s}}" # find pattern
+	local sep="="      # key-value separator
+	local arg key value find sedx
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-p) pat="$2"; shift ;;
+		-s) sep="$2"; shift ;;
+		*${sep}*)
+			arg="$1"
+			key="${arg%%${sep}*}"
+			value="${arg:$((${#key}+1))}"
+			find="$(printf "$pat" "$key")"
+			sedx="${sedx}s|$find|$value|g;"
+		esac
+		shift
 	done
-	sed "$pat"
+	sed "$sedx"
 }
 
 _in() {
