@@ -107,12 +107,12 @@ _comment() {
 }
 
 _uncomment() {
-	local search="$1"; shift
+	local srch="$1"; shift
 	local file="$1"; shift
-	local expr="/${search}/ s/^#+[[:blank:]]*//"
+	local sedx="/${srch}/ s/^#+[[:blank:]]*//"
 	if [ -n "$file" ]
-		then sed -Ei "$expr" "$file"
-		else sed -E "$expr"
+		then sed -Ei "$sedx" "$file"
+		else sed -E "$sedx"
 	fi
 }
 
