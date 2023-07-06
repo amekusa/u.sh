@@ -108,7 +108,8 @@ _comment() {
 _uncomment() {
 	local srch="$1"; shift
 	local file="$1"; shift
-	local sedx="/${srch}/ s/^([[:blank:]]*)#+[[:blank:]]*/\1/"
+	local sedx="s/^([[:blank:]]*)#+[[:blank:]]*/\1/"
+	[ -z "$srch" ] || sedx="/${srch}/ ${sedx}"
 	if [ -n "$file" ]
 		then sed -Ei "$sedx" "$file"
 		else sed -E "$sedx"
