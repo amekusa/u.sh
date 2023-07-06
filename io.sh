@@ -109,10 +109,10 @@ _comment() {
 _uncomment() {
 	local search="$1"; shift
 	local file="$1"; shift
-	local expr="/${search}/ s/^#+\s*//"
+	local expr="/${search}/ s/^#+[[:blank:]]*//"
 	if [ -n "$file" ]
-		then sed -ri "$expr" "$file"
-		else sed -r "$expr"
+		then sed -Ei "$expr" "$file"
+		else sed -E "$expr"
 	fi
 }
 
