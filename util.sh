@@ -162,9 +162,15 @@ _in() {
 }
 
 _lower() {
-	echo "$1" | tr '[A-Z]' '[a-z]'
+	if [ $# -eq 0 ]
+		then tr '[A-Z]' '[a-z]'
+		else echo "$*" | tr '[A-Z]' '[a-z]'
+	fi
 }
 
 _upper() {
-	echo "$1" | tr '[a-z]' '[A-Z]'
+	if [ $# -eq 0 ]
+		then tr '[a-z]' '[A-Z]'
+		else echo "$*" | tr '[a-z]' '[A-Z]'
+	fi
 }
