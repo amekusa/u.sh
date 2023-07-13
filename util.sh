@@ -62,9 +62,15 @@ _if() {
 		cond+=("$1")
 	done
 	if [ -z "$mode" ]; then
-		echo "ERROR: _if(): syntax error"
-		echo "  _if <cond> ? <A> : <B>"
-		echo "  _if <cond> ?: <alt>"
+		cat <<- EOF
+		ERROR: _if(): syntax error
+		  _if [options] <condition> ? <A> : <B>
+		  _if [options] <A> ?: <B>
+
+		  Options:
+		    -e, --eval :  Use 'eval' for <condition>
+
+		EOF
 		return 1
 	fi
 	case "$mode" in
