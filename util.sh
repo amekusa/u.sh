@@ -63,7 +63,7 @@ _if() {
 	done
 	if [ -z "$mode" ]; then
 		cat <<- EOF
-		ERROR: _if(): syntax error
+		[ERROR] _if(): syntax error
 		  _if [options] <condition> ? <A> : <B>
 		  _if [options] <A> ?: <B>
 
