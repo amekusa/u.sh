@@ -31,7 +31,7 @@
 ##
 
 _die() {
-	[ -z "$*" ] || echo "[ERROR] $*"
+	[ -z "$*" ] || echo "[ERROR] $*" >&2
 	exit 1
 }
 
@@ -62,7 +62,7 @@ _if() {
 		cond+=("$1")
 	done
 	if [ -z "$mode" ]; then
-		cat <<- EOF
+		cat <<- EOF >&2
 		[ERROR] _if(): syntax error
 		  _if [options] <condition> ? <A> : <B>
 		  _if [options] <A> ?: <B>
@@ -173,14 +173,14 @@ _repeat() {
 	case "$1" in
 		-w|--with) shift ;;
 		*)
-			cat <<- EOF
+			cat <<- EOF >&2
 			[ERROR] _repeat: syntax error
 			  _repeat <command> --with <list>
 			  _repeat --eval <command> --with <list>
 
-			Options:
-			  -e, --eval :  Use 'eval' for <command>
-			  -w, --with :  Specify <list> to iterate over
+			  Options:
+			    -e, --eval :  Use 'eval' for <command>
+			    -w, --with :  Specify <list> to iterate over
 
 			EOF
 			return 1
