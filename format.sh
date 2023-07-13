@@ -64,9 +64,9 @@ _success() {
 }
 
 _error() {
-	echo -e "[${RED}ERROR${RST}] $*"
+	echo -e "[${RED}ERROR${RST}] $*" >&2
 }
 
 _warn() {
-	echo -e "[${YLW}WARN${RST}] $*"
+	echo -e "[${YLW}WARN${RST}] $*" >&2
 }
