@@ -187,6 +187,7 @@ _repeat() {
 
 _in() {
 	local needle="$1"; shift
+	local each
 	for each in "$@"; do
 		[ "$needle" = "$each" ] && return 0
 	done
