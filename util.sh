@@ -153,6 +153,38 @@ _subst() {
 	sed "$sedx"
 }
 
+_repeat() {
+	local eval=false
+	if [ "$1" = "-e" ] || [ "$1" = "--eval" ]; then
+		eval=true; shift
+	fi
+	local cmd="$1"; shift
+	if [ "$1" = "-w" ] || [ "$1" = "--with" ]; then shift
+	else
+		cat <<- EOF
+		[ERROR] _repeat: syntax error
+		  _repeat <command> --with <list>
+		  _repeat --eval <command> --with <list>
+
+		  Options:
+		    -e, --eval :  Use 'eval' for <command>
+		    -w, --with :  Specify <list> to iterate over
+
+		EOF
+		return 1
+	fi
+	local each
+	if $eval; then
+		for each in "$@"; do
+			eval "$(printf "$cmd" "$each")"
+		done
+	else
+		for each in "$@"; do
+			$(printf "$cmd" "$each")
+		done
+	fi
+}
+
 _in() {
 	local needle="$1"; shift
 	for each in "$@"; do
