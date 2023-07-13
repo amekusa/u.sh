@@ -41,7 +41,10 @@ _q() {
 
 _if() {
 	local eval=false
-	[ "$1" = "-e" ] && eval=true && shift
+	case "$1" in
+		-e|--eval) eval=true; shift ;;
+	esac
+
 	local t f mode
 	local cond=("$1")
 	while shift; do
