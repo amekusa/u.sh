@@ -148,14 +148,14 @@ _subst() {
 	local arg key value find sedx
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		-p) pat="$2"; shift ;;
-		-s) sep="$2"; shift ;;
-		*${sep}*)
-			arg="$1"
-			key="${arg%%${sep}*}"
-			value="${arg:$((${#key}+1))}"
-			find="$(printf "$pat" "$key")"
-			sedx="${sedx}s|$find|$value|g;"
+			-p) pat="$2"; shift ;;
+			-s) sep="$2"; shift ;;
+			*${sep}*)
+				arg="$1"
+				key="${arg%%${sep}*}"
+				value="${arg:$((${#key}+1))}"
+				find="$(printf "$pat" "$key")"
+				sedx="${sedx}s|$find|$value|g;"
 		esac
 		shift
 	done
@@ -164,24 +164,28 @@ _subst() {
 
 _repeat() {
 	local eval=false
-	if [ "$1" = "-e" ] || [ "$1" = "--eval" ]; then
-		eval=true; shift
-	fi
+	case "$1" in
+		-e|--eval) eval=true; shift ;;
+	esac
+
 	local cmd="$1"; shift
-	if [ "$1" = "-w" ] || [ "$1" = "--with" ]; then shift
-	else
-		cat <<- EOF
-		[ERROR] _repeat: syntax error
-		  _repeat <command> --with <list>
-		  _repeat --eval <command> --with <list>
 
-		  Options:
-		    -e, --eval :  Use 'eval' for <command>
-		    -w, --with :  Specify <list> to iterate over
+	case "$1" in
+		-w|--with) shift ;;
+		*)
+			cat <<- EOF
+			[ERROR] _repeat: syntax error
+			  _repeat <command> --with <list>
+			  _repeat --eval <command> --with <list>
 
-		EOF
-		return 1
-	fi
+			Options:
+			  -e, --eval :  Use 'eval' for <command>
+			  -w, --with :  Specify <list> to iterate over
+
+			EOF
+			return 1
+	esac
+
 	local each
 	if $eval; then
 		for each in "$@"; do
