@@ -154,9 +154,9 @@ _rpt() {
 		-w|--with) shift ;;
 		*)
 			cat <<- EOF >&2
-			[ERROR] _repeat: syntax error
-			  _repeat <command> --with <list>
-			  _repeat --eval <command> --with <list>
+			[ERROR] _rpt: syntax error
+			  _rpt <command> --with <list>
+			  _rpt --eval <command> --with <list>
 
 			  Options:
 			    -e, --eval :  Use 'eval' for <command>
