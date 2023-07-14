@@ -142,7 +142,7 @@ _join() {
 	printf "%s" "$first" "${@/#/$sep}"
 }
 
-_repeat() {
+_rpt() {
 	local eval=false
 	case "$1" in
 		-e|--eval) eval=true; shift ;;
