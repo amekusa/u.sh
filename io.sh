@@ -151,6 +151,26 @@ _load-var() {
 	return 1
 }
 
+_subst() {
+	local pat="{{%s}}" # find pattern
+	local sep="="      # key-value separator
+	local arg key value find sedx
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			-p) pat="$2"; shift ;;
+			-s) sep="$2"; shift ;;
+			*${sep}*)
+				arg="$1"
+				key="${arg%%${sep}*}"
+				value="${arg:$((${#key}+1))}"
+				find="$(printf "$pat" "$key")"
+				sedx="${sedx}s|$find|$value|g;"
+		esac
+		shift
+	done
+	sed "$sedx"
+}
+
 # insert/update a section in a file
 _section() {
 	local name="$1"; shift # section name
