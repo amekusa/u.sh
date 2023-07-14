@@ -1,5 +1,6 @@
-# shlib
+# SHLIB
 Utility library for shell scripts
+
 
 ## INSTALLATION
 Install as a git submodule:
@@ -13,6 +14,23 @@ Initialize/Update submodule:
 ```sh
 git submodule update --init
 ```
+
+
+## USAGE
+Just `source` or `.(period)` the file(s) in `src` you want, like this:
+
+```sh
+. shlib/src/util.sh
+. shlib/src/io.sh
+```
+
+> NOTE:
+	Most function names begin with `_(underscore)` for avoiding potential naming conflicts.
+
+
+## DOCUMENTATIONS
+Not yet.
+
 
 ## LICENSE
 
