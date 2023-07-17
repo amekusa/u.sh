@@ -1,0 +1,80 @@
+_shlib_v1.0.0_load() {
+	local ver="1.0.0"
+	[ -n "$_shlib_stack" ] || _shlib_stack=";" # global
+	local exec="${BASH_SOURCE[0]:-${(%):-%x}}"
+	local base="$(dirname "$exec")"
+	local label="SHLIB/load"
+	local prefix="_"
+	local verbose=false
+	local each file token
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-h|--help)
+			cat <<- EOF
+			# SHLIB v$ver
+			by @amekusa
+
+			## Usage:
+			source shlib/load [options] <lib1> <lib2> ...
+
+			## Options:
+			--prefix <prefix> :  Custom prefix for functions [default: '_']
+			     --p <prefix>
+			    --verbose, -v :  Output debug messages
+
+			## Examples:
+			source shlib/load util io         # Load util & io libs
+			source shlib/load -p my_ util io  # With prefix 'my_'
+
+			EOF
+			;;
+		-p|--prefix)
+			shift
+			prefix="$1"
+			;;
+		-v|--verbose)
+			verbose=true
+			;;
+		-*)
+			cat <<- EOF >&2
+			[ERROR] $label: Invalid argument '$1'
+
+			EOF
+			_shlib_load -h
+			return 1
+			;;
+		*)
+			file="$base/src/$1.sh"
+			if [ ! -f "$file" ]; then
+				cat <<- EOF >&2
+				[ERROR] $label: No such library as '$1'
+				:: Searched path: "$file"
+
+				EOF
+				return 1
+			fi
+			token="$prefix+$1@$ver"
+			if [[ "$_shlib_stack" == *";$token;"* ]]; then
+				$verbose && echo "[INFO] $label: Library '$token' already loaded. Skipped"
+			else
+				if [[ "$_shlib_stack" == *";$prefix+$1@"* ]]; then
+					cat <<- EOF >&2
+					[ERROR] $label: Library conflict '$token'
+					:: A different version of '$1' with prefix '$prefix' already loaded
+					:: Choosing other prefix would fix this problem
+
+					EOF
+					verbose && echo "[INFO] $label: Loaded libraries: $_shlib_stack"
+					return 1
+				fi
+				$verbose && echo "[INFO] $label: Loading "$file" with prefix '$prefix' ..."
+				eval "$(cat "$file" | sed "s/_shlib_/$prefix/")"
+				_shlib_stack="$_shlib_stack$token;"
+				$verbose && echo "[INFO] $label: Library loaded: $token"
+			fi
+		esac
+		shift
+	done
+}
+
+_shlib_v1.0.0_load "$@"
