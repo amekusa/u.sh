@@ -1,5 +1,3 @@
-[ -n "$_shlib_task" ] && return; readonly _shlib_task=1
-
 ##
 #  shlib/task
 # ------------ -
@@ -43,7 +41,7 @@ _task_current=""
 _task_repeat=false
 
 # Initialize task system
-task-system() {
+_shlib_task-system() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-s|--save-to)
@@ -61,14 +59,14 @@ task-system() {
 			_task_opt_prompt=true
 			;;
 		--reset)
-			reset-tasks
+			_shlib_reset-tasks
 			;;
 		-*)
 			echo "invalid argument '$1'"
 			;;
 		*) # task selection
 			[ "$_task_exec" = "ALL" ] && _task_exec=()
-			_task_exec+=("$(_upper "$1")")
+			_task_exec+=("$(_shlib_upper "$1")")
 			;;
 		esac
 		shift
@@ -83,7 +81,7 @@ task-system() {
 #   	# do stuff
 #   ksat; fi
 #
-task() {
+_shlib_task() {
 	local task="$1"; shift
 	[ -n "$task" ] || _die "argument missing"
 
@@ -92,12 +90,12 @@ task() {
 
 	# selective tasks
 	if [ "$_task_exec" != "ALL" ]; then
-		_in "$(_upper "$task")" "${_task_exec[@]}" || return 1
+		_in "$(_shlib_upper "$task")" "${_task_exec[@]}" || return 1
 	fi
 
 	# list mode
 	if $_task_opt_list; then
-		local status="$(task-status "$task")"
+		local status="$(_shlib_task-status "$task")"
 		if [ -z "$status" ];
 			then echo "$task"
 			else echo "$task (status: $status)"
@@ -110,7 +108,7 @@ task() {
 
 	# check task status
 	if ! $_task_opt_force; then
-		is-task "$task" DONE NEVER && return 1
+		_shlib_is-task "$task" DONE NEVER && return 1
 	fi
 
 	# parse args
@@ -132,7 +130,7 @@ task() {
 		*) # contextual args
 			case "$context" in
 			DEPS) # check dependencies
-				is-task "$1" DONE || return 1 ;;
+				_shlib_is-task "$1" DONE || return 1 ;;
 			*) valid=false
 			esac
 		esac
@@ -141,7 +139,7 @@ task() {
 		shift
 	done
 
-	if is-task "$task" REPEAT; then
+	if _shlib_is-task "$task" REPEAT; then
 		repeat=true
 	elif $_task_opt_prompt; then # prompt mode
 		local answer
@@ -152,8 +150,8 @@ task() {
 			[Rr]) echo "> Run";          break ;;
 			[Aa]) echo "> Always";       repeat=true; break ;;
 			[Ss]) echo "> Skip";         return 1 ;;
-			[Nn]) echo "> Never";        set-task "$task" NEVER; return 1 ;;
-			[Dd]) echo "> Done already"; set-task "$task" DONE;  return 1 ;;
+			[Nn]) echo "> Never";        _shlib_set-task "$task" NEVER; return 1 ;;
+			[Dd]) echo "> Done already"; _shlib_set-task "$task" DONE;  return 1 ;;
 			esac
 		done
 	fi
@@ -166,44 +164,44 @@ task() {
 }
 
 # Sets the current task status to DONE
-ksat() {
+_shlib_ksat() {
 	[ -n "$_task_current" ] || _die "no active task"
 	local status=DONE; $_task_repeat && status=REPEAT
-	_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	_shlib_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 	echo "TASK: $_task_current > $status"
 	_task_current=""
 	_task_repeat=false
 }
 
-fail() {
+_shlib_fail() {
 	echo "TASK: $_task_current > ERROR!"
 	[ -z "$*" ] || echo " > $*"
-	_save-var "$_task_current" FAILED "$_task_save_to"
+	_shlib_save-var "$_task_current" FAILED "$_task_save_to"
 	exit 1
 }
 
 # Returns task status
-task-status() {
-	_load-var "$1" "$_task_save_to"
+_shlib_task-status() {
+	_shlib_load-var "$1" "$_task_save_to"
 }
 
 # Checks task status
-is-task() {
-	local status="$(task-status "$1")"; shift
+_shlib_is-task() {
+	local status="$(_shlib_task-status "$1")"; shift
 	_in "$status" "$@"
 }
 
 # Sets task status
-set-task() {
+_shlib_set-task() {
 	local task="$1"
 	local status="$2"
-	_save-var "$task" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	_shlib_save-var "$task" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 }
 
-reset-task() {
-	set-task "$1" RESET
+_shlib_reset-task() {
+	_shlib_set-task "$1" RESET
 }
 
-reset-tasks() {
+_shlib_reset-tasks() {
 	echo "" > "$_task_save_to"
 }

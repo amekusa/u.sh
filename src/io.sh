@@ -1,5 +1,3 @@
-[ -n "$_shlib_io" ] && return; readonly _shlib_io=1
-
 ##
 #  shlib/io
 # ------------ -
@@ -30,7 +28,7 @@
 #
 ##
 
-_file() {
+_shlib_file() {
 	local path="$1"; shift
 	local dir=false
 	local realpath=false
@@ -43,7 +41,7 @@ _file() {
 			-b|--basename) basename=true ;;
 			-m|--mod) mod="$2"; shift ;;
 			-o|--own) own="$2"; shift ;;
-			*) echo "[ERROR] _file(): invalid argument: $1"; return 1
+			*) echo "[ERROR] _shlib_file(): invalid argument: $1"; return 1
 		esac
 		shift
 	done
@@ -59,11 +57,11 @@ _file() {
 	echo "$r"
 }
 
-_dir() {
-	_file "$@" -d
+_shlib_dir() {
+	_shlib_file "$@" -d
 }
 
-_symlink() {
+_shlib_symlink() {
 	local force=false
 	if [ "$1" = "-F" ]; then force=true; shift; fi
 	local src="$1"
@@ -74,7 +72,7 @@ _symlink() {
 	fi
 	if [ -e "$dst" ]; then
 		if $force; then
-			if ! _del "$dst"; then
+			if ! _shlib_del "$dst"; then
 				echo "[FAIL] file already exists and cannot be deleted: $dst"
 				return 1
 			fi
@@ -86,7 +84,7 @@ _symlink() {
 	ln -sn "$src" "$dst"
 }
 
-_del() {
+_shlib_del() {
 	[ -e "$1" ] || return 0
 	if [ -d "$1" ];
 		then rm -rf "$1"
@@ -94,7 +92,7 @@ _del() {
 	fi
 }
 
-_comment() {
+_shlib_comment() {
 	local srch="$1"; shift
 	local file="$1"; shift
 	local sedx="s/^([[:blank:]]*)([^#[:blank:]])/\1# \2/"
@@ -105,7 +103,7 @@ _comment() {
 	fi
 }
 
-_uncomment() {
+_shlib_uncomment() {
 	local srch="$1"; shift
 	local file="$1"; shift
 	local sedx="s/^([[:blank:]]*)#+[[:blank:]]*/\1/"
@@ -116,7 +114,7 @@ _uncomment() {
 	fi
 }
 
-_save-var() {
+_shlib_save-var() {
 	local key="$1"; shift
 	local value="$1"; shift
 	local file="$1"; shift
@@ -137,7 +135,7 @@ _save-var() {
 	rm "$temp"
 }
 
-_load-var() {
+_shlib_load-var() {
 	local key="$1"; shift
 	local file="$1"; shift
 	local find="^[[:space:]]*$key=\"?([^\"]*)\"?"
@@ -151,7 +149,7 @@ _load-var() {
 	return 1
 }
 
-_subst() {
+_shlib_subst() {
 	local pat="{{%s}}" # find pattern
 	local sep="="      # key-value separator
 	local arg key value find sedx
@@ -172,7 +170,7 @@ _subst() {
 }
 
 # insert/update a section in a file
-_section() {
+_shlib_section() {
 	local name="$1"; shift # section name
 	local file="$1"; shift # file to write
 	local ins="$(cat)"     # content to insert (stdin)

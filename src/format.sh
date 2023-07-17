@@ -1,5 +1,3 @@
-[ -n "$_shlib_format" ] && return; readonly _shlib_format=1
-
 ##
 #  shlib/format
 # -------------- -
@@ -38,7 +36,7 @@ LF=$'\n'
 TAB=$'\t'
 
 # Defines ANSI code variables
-_ansi() {
+_shlib_ansi() {
 	ESC='\033'
 
 	while [ $# -gt 0 ]; do
@@ -50,11 +48,11 @@ _ansi() {
 				hex)  ESC='\x1b'   ;;
 				uni)  ESC='\u001b' ;;
 				char) ESC=$'\e'    ;;  # NOTE: This enables ANSI codes without passing '-e' option to echo
-				*) echo "[ERROR] _ansi: invalid argument '$1'" >&2
+				*) echo "[ERROR] _shlib_ansi: invalid argument '$1'" >&2
 			esac
 			;;
 		-*)
-			echo "[ERROR] _ansi: invalid argument '$1'" >&2
+			echo "[ERROR] _shlib_ansi: invalid argument '$1'" >&2
 			;;
 		esac
 		shift
@@ -77,16 +75,16 @@ _ansi() {
 	# reset
 	RST="${ESC}[0m"
 }
-_ansi;
+_shlib_ansi;
 
-_success() {
+_shlib_success() {
 	echo -e "[${GRN}SUCCESS${RST}] $*"
 }
 
-_error() {
+_shlib_error() {
 	echo -e "[${RED}ERROR${RST}] $*"
 }
 
-_warn() {
+_shlib_warn() {
 	echo -e "[${YLW}WARN${RST}] $*"
 }

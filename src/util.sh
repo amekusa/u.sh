@@ -1,5 +1,3 @@
-[ -n "$_shlib_util" ] && return; readonly _shlib_util=1
-
 ##
 #  shlib/util
 # ------------ -
@@ -30,16 +28,16 @@
 #
 ##
 
-_die() {
+_shlib_die() {
 	[ -z "$*" ] || echo "[ERROR] $*" >&2
 	exit 1
 }
 
-_q() {
+_shlib_q() {
 	"$@" &> /dev/null
 }
 
-_if() {
+_shlib_if() {
 	local eval=false
 	case "$1" in
 		-e|--eval) eval=true; shift ;;
@@ -63,9 +61,9 @@ _if() {
 	done
 	if [ -z "$mode" ]; then
 		cat <<- EOF >&2
-		[ERROR] _if(): syntax error
-		  _if [options] <condition> ? <A> : <B>
-		  _if [options] <A> ?: <B>
+		[ERROR] _shlib_if(): syntax error
+		  _shlib_if [options] <condition> ? <A> : <B>
+		  _shlib_if [options] <A> ?: <B>
 
 		  Options:
 		    -e, --eval :  Use 'eval' for <condition>
@@ -93,11 +91,11 @@ _if() {
 	fi
 }
 
-_has-cmd() {
+_shlib_has-cmd() {
 	command -v "$*" &> /dev/null
 }
 
-_fb() {
+_shlib_fb() {
 	local arg
 	for arg in "$@"; do
 		if [ -n "$arg" ]; then
@@ -108,7 +106,7 @@ _fb() {
 	return 1
 }
 
-_fb-cmd() {
+_shlib_fb-cmd() {
 	local full=false
 	case "$1" in
 		-f|--full) full=true; shift ;;
@@ -125,24 +123,24 @@ _fb-cmd() {
 	return 1
 }
 
-_chk-user() {
-	[ "$(whoami)" = "$1" ] || _die "run as $1"
+_shlib_chk-user() {
+	[ "$(whoami)" = "$1" ] || _shlib_die "run as $1"
 }
 
-_chk-cmd() {
+_shlib_chk-cmd() {
 	local arg
 	for arg in "$@"; do
-		_has-cmd "$arg" || _die "command '$arg' is not found"
+		_shlib_has-cmd "$arg" || _shlib_die "command '$arg' is not found"
 	done
 }
 
-_join() {
+_shlib_join() {
 	local sep="$1"; shift
 	local first="$1"; shift
 	printf "%s" "$first" "${@/#/$sep}"
 }
 
-_rpt() {
+_shlib_rpt() {
 	local eval=false
 	case "$1" in
 		-e|--eval) eval=true; shift ;;
@@ -154,9 +152,9 @@ _rpt() {
 		-w|--with) shift ;;
 		*)
 			cat <<- EOF >&2
-			[ERROR] _rpt: syntax error
-			  _rpt <command> --with <list>
-			  _rpt --eval <command> --with <list>
+			[ERROR] _shlib_rpt: syntax error
+			  _shlib_rpt <command> --with <list>
+			  _shlib_rpt --eval <command> --with <list>
 
 			  Options:
 			    -e, --eval :  Use 'eval' for <command>
@@ -178,7 +176,7 @@ _rpt() {
 	fi
 }
 
-_in() {
+_shlib_in() {
 	local needle="$1"; shift
 	local each
 	for each in "$@"; do
@@ -187,14 +185,14 @@ _in() {
 	return 1
 }
 
-_lower() {
+_shlib_lower() {
 	if [ $# -eq 0 ]
 		then tr '[A-Z]' '[a-z]'
 		else echo "$*" | tr '[A-Z]' '[a-z]'
 	fi
 }
 
-_upper() {
+_shlib_upper() {
 	if [ $# -eq 0 ]
 		then tr '[a-z]' '[A-Z]'
 		else echo "$*" | tr '[a-z]' '[A-Z]'
