@@ -28,9 +28,7 @@
 #
 ##
 
-_shlib_base="$(dirname "${BASH_SOURCE[0]}")"
-. "$_shlib_base/util.sh"
-. "$_shlib_base/io.sh"
+@shlib-load util io
 
 _task_save_to=""
 _task_exec="ALL"
