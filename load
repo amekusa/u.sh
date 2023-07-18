@@ -1,8 +1,8 @@
-_shlib_v1.0.0_load() {
+[ -n "$_shlib_stack" ] || _shlib_stack=";" # global
+
+@shlib_v1.0.0_load() {
 	local ver="1.0.0"
-	[ -n "$_shlib_stack" ] || _shlib_stack=";" # global
-	local exec="${BASH_SOURCE[0]:-${(%):-%x}}"
-	local base="$(dirname "$exec")"
+	local base="$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")"
 	local label="SHLIB/load"
 	local prefix="_"
 	local verbose=false
@@ -12,7 +12,7 @@ _shlib_v1.0.0_load() {
 	local cacheTTL=3600 # Cache lifespan in seconds (Negative number means infinity)
 	local now="$(date +%s)"
 
-	local each file token data cacheFile
+	local each file token data cacheFile sedx loader
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-h|--help)
@@ -24,18 +24,22 @@ _shlib_v1.0.0_load() {
 			source shlib/load [options] <lib1> <lib2> ...
 
 			## Options:
-			--prefix <prefix> :  Custom prefix for functions (default: '_')
+			--prefix <prefix> : Custom prefix for functions (default: '_')
 			--p <prefix>
-			--verbose, -v     :  Output debug messages
-			--cache, -c       :  Enable cache (default: true)
-			--no-cache        :  Disable cache
-			--cache-ttl <sec> :  Cache lifespan (default: 3600) (Negative number means infinity)
+			--verbose, -v     : Output debug messages
+			--cache, -c       : Enable cache (default: true)
+			--no-cache        : Disable cache
+			--cache-ttl <sec> : Cache lifespan (default: 3600) (Negative number means infinity)
 
 			## Examples:
 			source shlib/load util io         # Load util & io libs
 			source shlib/load -p my_ util io  # With prefix 'my_'
 
 			EOF
+			;;
+		--base)
+			shift
+			base="$1"
 			;;
 		-p|--prefix)
 			shift
@@ -86,15 +90,24 @@ _shlib_v1.0.0_load() {
 					verbose && echo "[INFO] $label: list of loaded libraries: $_shlib_stack"
 					return 1
 				fi
-				# Start loading library
+
 				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
+				loader="@shlib_v1.0.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
+				if $cache
+					then loader="$loader --cache"
+					else loader="$loader --no-cache"
+				fi
+				$verbose && loader="$loader --verbose"
+				sedx="s|@shlib-load |$loader |g;s|_shlib_|$prefix|g"
+
 				if $cache; then # Handle cache
 					cacheFile="$cacheDir/$token.sh"
 					if [[ -f "$cacheFile" && ( "$cacheTTL" -lt 0 || "$cacheTTL" -ge "$(("$now" - "$(date -r "$cacheFile" +%s)"))" ) ]]; then
 						source "$cacheFile"
 						$verbose && echo "[INFO] $label: cache loaded: '$cacheFile'"
 					else # Cache is not present OR expired
-						data="$(sed "s|_shlib_|$prefix|" "$file")"
+						[ -d "$cacheDir" ] || mkdir -m 0755 "$cacheDir" || return 1
+						data="$(sed "$sedx" "$file")"
 						eval "$data"
 						echo "$data" > "$cacheFile" # Create cache
 						if $verbose; then
@@ -103,7 +116,7 @@ _shlib_v1.0.0_load() {
 						fi
 					fi
 				else # No need to handle cache
-					eval "$(sed "s|_shlib_|$prefix|" "$file")"
+					eval "$(sed "$sedx" "$file")"
 					$verbose && echo "[INFO] $label: library loaded: '$token'"
 				fi
 				_shlib_stack="$_shlib_stack$token;"
@@ -113,4 +126,4 @@ _shlib_v1.0.0_load() {
 	done
 }
 
-_shlib_v1.0.0_load "$@"
+@shlib_v1.0.0_load "$@"
