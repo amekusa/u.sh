@@ -6,7 +6,13 @@ _shlib_v1.0.0_load() {
 	local label="SHLIB/load"
 	local prefix="_"
 	local verbose=false
-	local each file token
+
+	local cache=true
+	local cacheDir="$base/.cache"
+	local cacheTTL=3600 # Cache lifespan in seconds (Negative number means infinity)
+	local now="$(date +%s)"
+
+	local each file token data cacheFile
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-h|--help)
@@ -18,9 +24,12 @@ _shlib_v1.0.0_load() {
 			source shlib/load [options] <lib1> <lib2> ...
 
 			## Options:
-			--prefix <prefix> :  Custom prefix for functions [default: '_']
-			     --p <prefix>
-			    --verbose, -v :  Output debug messages
+			--prefix <prefix> :  Custom prefix for functions (default: '_')
+			--p <prefix>
+			--verbose, -v     :  Output debug messages
+			--cache, -c       :  Enable cache (default: true)
+			--no-cache        :  Disable cache
+			--cache-ttl <sec> :  Cache lifespan (default: 3600) (Negative number means infinity)
 
 			## Examples:
 			source shlib/load util io         # Load util & io libs
@@ -32,12 +41,22 @@ _shlib_v1.0.0_load() {
 			shift
 			prefix="$1"
 			;;
+		-c|--cache)
+			cache=true
+			;;
+		--no-cache)
+			cache=false
+			;;
+		--cache-ttl)
+			shift
+			cacheTTL="$1"
+			;;
 		-v|--verbose)
 			verbose=true
 			;;
 		-*)
 			cat <<- EOF >&2
-			[ERROR] $label: Invalid argument '$1'
+			[ERROR] $label: invalid argument: '$1'
 
 			EOF
 			_shlib_load -h
@@ -47,7 +66,7 @@ _shlib_v1.0.0_load() {
 			file="$base/src/$1.sh"
 			if [ ! -f "$file" ]; then
 				cat <<- EOF >&2
-				[ERROR] $label: No such library as '$1'
+				[ERROR] $label: library not found: '$1'
 				:: Searched path: "$file"
 
 				EOF
@@ -55,22 +74,39 @@ _shlib_v1.0.0_load() {
 			fi
 			token="$prefix+$1@$ver"
 			if [[ "$_shlib_stack" == *";$token;"* ]]; then
-				$verbose && echo "[INFO] $label: Library '$token' already loaded. Skipped"
+				$verbose && echo "[INFO] $label: library '$token' already loaded. skipped"
 			else
 				if [[ "$_shlib_stack" == *";$prefix+$1@"* ]]; then
 					cat <<- EOF >&2
-					[ERROR] $label: Library conflict '$token'
+					[ERROR] $label: library conflicted: '$token'
 					:: A different version of '$1' with prefix '$prefix' already loaded
 					:: Choosing other prefix would fix this problem
 
 					EOF
-					verbose && echo "[INFO] $label: Loaded libraries: $_shlib_stack"
+					verbose && echo "[INFO] $label: list of loaded libraries: $_shlib_stack"
 					return 1
 				fi
-				$verbose && echo "[INFO] $label: Loading "$file" with prefix '$prefix' ..."
-				eval "$(cat "$file" | sed "s/_shlib_/$prefix/")"
+				# Start loading library
+				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
+				if $cache; then # Handle cache
+					cacheFile="$cacheDir/$token.sh"
+					if [[ -f "$cacheFile" && ( "$cacheTTL" -lt 0 || "$cacheTTL" -ge "$(("$now" - "$(date -r "$cacheFile" +%s)"))" ) ]]; then
+						source "$cacheFile"
+						$verbose && echo "[INFO] $label: cache loaded: '$cacheFile'"
+					else # Cache is not present OR expired
+						data="$(sed "s|_shlib_|$prefix|" "$file")"
+						eval "$data"
+						echo "$data" > "$cacheFile" # Create cache
+						if $verbose; then
+							echo "[INFO] $label: library loaded: '$token'"
+							echo "[INFO] $label: cache updated: '$cacheFile'"
+						fi
+					fi
+				else # No need to handle cache
+					eval "$(sed "s|_shlib_|$prefix|" "$file")"
+					$verbose && echo "[INFO] $label: library loaded: '$token'"
+				fi
 				_shlib_stack="$_shlib_stack$token;"
-				$verbose && echo "[INFO] $label: Library loaded: $token"
 			fi
 		esac
 		shift
