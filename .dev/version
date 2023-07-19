@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+base="$(dirname "$(dirname "$(realpath "$0")")")"
+ver="$1"; shift
+if [[ ! "$ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+	cat <<- EOF >&2
+	# SHLIB/version
+	Rewrites version numbers
+
+	## Usage:
+	version <N.N.N>
+
+	EOF
+	exit 1
+fi
+
+files=(
+	"$base/load"
+	"$base/README.md"
+)
+sedx="s|ver=\"[0-9]+\.[0-9]+\.[0-9]+\"|ver=\"$ver\"|g"
+sedx="$sedx;s|v[0-9]+\.[0-9]+\.[0-9]+|v$ver|g"
+for each in "${files[@]}"; do
+	data="$(sed -E "$sedx" "$each")" && echo "$data" > "$each"
+done
