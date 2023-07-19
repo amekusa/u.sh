@@ -1,5 +1,5 @@
 ##
-#  shlib/interactive
+#  ush/interactive
 # ------------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
@@ -34,13 +34,13 @@
 # ---- functions ----
 
 # reload the login shell
-_shlib_reload() {
+_ush_reload() {
 	echo "Reloading the login shell ($SHELL)..."
 	exec "$SHELL" --login
 }
 
 # save dir
-_shlib_sd() {
+_ush_sd() {
 	if [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -90,12 +90,12 @@ _shlib_sd() {
 }
 
 # cd & sd
-_shlib_scd() {
-	cd $* && _shlib_sd
+_ush_scd() {
+	cd $* && _ush_sd
 }
 
 # go to saved dir
-_shlib_wd() {
+_ush_wd() {
 	if [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -108,7 +108,7 @@ _shlib_wd() {
 		return 1
 	fi
 	if [ -z "$1" ]; then
-		_shlib_sd -l
+		_ush_sd -l
 		return
 	fi
 	if [ -z "$_SAVED_DIRS" ]; then
@@ -143,7 +143,7 @@ _shlib_wd() {
 }
 
 # mkdir & cd
-_shlib_mkcd() {
+_ush_mkcd() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -162,7 +162,7 @@ _shlib_mkcd() {
 }
 
 # find
-_shlib_f() {
+_ush_f() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -177,7 +177,7 @@ _shlib_f() {
 }
 
 # find & cd
-_shlib_fcd() {
+_ush_fcd() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -197,7 +197,7 @@ _shlib_fcd() {
 }
 
 # site health checker
-_shlib_http() {
+_ush_http() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -217,7 +217,7 @@ _shlib_http() {
 }
 
 # site health checker (HTTPS)
-_shlib_https() {
+_ush_https() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -226,5 +226,5 @@ _shlib_https() {
 		EOF
 		return 1
 	fi
-	_shlib_http "$1" -s
+	_ush_http "$1" -s
 }

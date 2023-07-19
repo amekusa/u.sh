@@ -1,5 +1,5 @@
 ##
-#  shlib/task
+#  ush/task
 # ------------ -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
@@ -28,7 +28,7 @@
 #
 ##
 
-@shlib-load util io
+@ush-load util io
 
 _task_save_to=""
 _task_exec="ALL"
@@ -39,7 +39,7 @@ _task_current=""
 _task_repeat=false
 
 # Initialize task system
-_shlib_task-system() {
+_ush_task-system() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-s|--save-to)
@@ -57,14 +57,14 @@ _shlib_task-system() {
 			_task_opt_prompt=true
 			;;
 		--reset)
-			_shlib_reset-tasks
+			_ush_reset-tasks
 			;;
 		-*)
 			echo "invalid argument '$1'"
 			;;
 		*) # task selection
 			[ "$_task_exec" = "ALL" ] && _task_exec=()
-			_task_exec+=("$(_shlib_upper "$1")")
+			_task_exec+=("$(_ush_upper "$1")")
 			;;
 		esac
 		shift
@@ -79,7 +79,7 @@ _shlib_task-system() {
 #   	# do stuff
 #   ksat; fi
 #
-_shlib_task() {
+_ush_task() {
 	local task="$1"; shift
 	[ -n "$task" ] || _die "argument missing"
 
@@ -88,12 +88,12 @@ _shlib_task() {
 
 	# selective tasks
 	if [ "$_task_exec" != "ALL" ]; then
-		_in "$(_shlib_upper "$task")" "${_task_exec[@]}" || return 1
+		_in "$(_ush_upper "$task")" "${_task_exec[@]}" || return 1
 	fi
 
 	# list mode
 	if $_task_opt_list; then
-		local status="$(_shlib_task-status "$task")"
+		local status="$(_ush_task-status "$task")"
 		if [ -z "$status" ];
 			then echo "$task"
 			else echo "$task (status: $status)"
@@ -106,7 +106,7 @@ _shlib_task() {
 
 	# check task status
 	if ! $_task_opt_force; then
-		_shlib_is-task "$task" DONE NEVER && return 1
+		_ush_is-task "$task" DONE NEVER && return 1
 	fi
 
 	# parse args
@@ -128,7 +128,7 @@ _shlib_task() {
 		*) # contextual args
 			case "$context" in
 			DEPS) # check dependencies
-				_shlib_is-task "$1" DONE || return 1 ;;
+				_ush_is-task "$1" DONE || return 1 ;;
 			*) valid=false
 			esac
 		esac
@@ -137,7 +137,7 @@ _shlib_task() {
 		shift
 	done
 
-	if _shlib_is-task "$task" REPEAT; then
+	if _ush_is-task "$task" REPEAT; then
 		repeat=true
 	elif $_task_opt_prompt; then # prompt mode
 		local answer
@@ -148,8 +148,8 @@ _shlib_task() {
 			[Rr]) echo "> Run";          break ;;
 			[Aa]) echo "> Always";       repeat=true; break ;;
 			[Ss]) echo "> Skip";         return 1 ;;
-			[Nn]) echo "> Never";        _shlib_set-task "$task" NEVER; return 1 ;;
-			[Dd]) echo "> Done already"; _shlib_set-task "$task" DONE;  return 1 ;;
+			[Nn]) echo "> Never";        _ush_set-task "$task" NEVER; return 1 ;;
+			[Dd]) echo "> Done already"; _ush_set-task "$task" DONE;  return 1 ;;
 			esac
 		done
 	fi
@@ -162,44 +162,44 @@ _shlib_task() {
 }
 
 # Sets the current task status to DONE
-_shlib_ksat() {
+_ush_ksat() {
 	[ -n "$_task_current" ] || _die "no active task"
 	local status=DONE; $_task_repeat && status=REPEAT
-	_shlib_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	_ush_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 	echo "TASK: $_task_current > $status"
 	_task_current=""
 	_task_repeat=false
 }
 
-_shlib_fail() {
+_ush_fail() {
 	echo "TASK: $_task_current > ERROR!"
 	[ -z "$*" ] || echo " > $*"
-	_shlib_save-var "$_task_current" FAILED "$_task_save_to"
+	_ush_save-var "$_task_current" FAILED "$_task_save_to"
 	exit 1
 }
 
 # Returns task status
-_shlib_task-status() {
-	_shlib_load-var "$1" "$_task_save_to"
+_ush_task-status() {
+	_ush_load-var "$1" "$_task_save_to"
 }
 
 # Checks task status
-_shlib_is-task() {
-	local status="$(_shlib_task-status "$1")"; shift
+_ush_is-task() {
+	local status="$(_ush_task-status "$1")"; shift
 	_in "$status" "$@"
 }
 
 # Sets task status
-_shlib_set-task() {
+_ush_set-task() {
 	local task="$1"
 	local status="$2"
-	_shlib_save-var "$task" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	_ush_save-var "$task" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 }
 
-_shlib_reset-task() {
-	_shlib_set-task "$1" RESET
+_ush_reset-task() {
+	_ush_set-task "$1" RESET
 }
 
-_shlib_reset-tasks() {
+_ush_reset-tasks() {
 	echo "" > "$_task_save_to"
 }

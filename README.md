@@ -1,20 +1,23 @@
-# SHLIB v1.0.0
-A collection of utility libraries for shell scripting
+# U.SH
+A collection of utility libraries for shell scripting in Bash/Zsh
 
-Written by [@amekusa](https://github.com/amekusa)
+- Current: `v0.1.0`
+- Author: [@amekusa](https://github.com/amekusa)
 
 
-## Features
+## FEATURES
 - Customizable function prefix
 - Does not load the same library twice
-- Supports caching to minimize loading overheads
+- Supports caching to minimize the loading overheads
 
 
 ## INSTALLATION
-Install as a git submodule:
+
+
+### Via Git Submodule
 
 ```sh
-git submodule add https://github.com/amekusa/shlib.git
+git submodule add https://github.com/amekusa/ush.git
 ```
 
 Initialize/Update submodule:
@@ -27,8 +30,8 @@ git submodule update --init
 ## USAGE
 ```sh
 #!/usr/bin/env bash
-. shlib/load util     # Load util lib
-. shlib/load util io  # Load util & io libs
+. ush/load util     # Load util lib
+. ush/load util io  # Load util & io libs
 ```
 
 By default, all the functions are prefixed with `_(underscore)`.
@@ -36,14 +39,14 @@ If you don't like it however, it can be changed to whatever you like with `--pre
 
 ```sh
 #!/usr/bin/env bash
-. shlib/load --prefix 'my_' util  # Prefixise util with 'my_'
-. shlib/load -p 'my_' util io     # Prefixise util & io with 'my_'
+. ush/load --prefix 'my_' util  # Prefixise util with 'my_'
+. ush/load -p 'my_' util io     # Prefixise util & io with 'my_'
 ```
 
 Then, all the functions in the specified libraries are renamed to have the specified prefix instead of `_`.
 
 
-### OPTIONS LIST
+### Available Options
 ```
 --prefix <prefix> : Custom prefix for functions (default: '_')
 --p <prefix>
@@ -55,7 +58,7 @@ Then, all the functions in the specified libraries are renamed to have the speci
 
 
 ## DOCUMENTATIONS
-Not yet.
+Not ready yet.
 
 
 ## LICENSE

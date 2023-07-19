@@ -1,9 +1,9 @@
-[ -n "$_shlib_stack" ] || _shlib_stack=";" # global
+[ -n "$_ush_stack" ] || _ush_stack=";" # global
 
-@shlib_v0.1.0_load() {
+@ush_v0.1.0_load() {
 	local ver="0.1.0"
 	local base="$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")"
-	local label="SHLIB/load"
+	local label="USH/load"
 	local prefix="_"
 	local verbose=false
 
@@ -17,11 +17,11 @@
 		case "$1" in
 		-h|--help)
 			cat <<- EOF
-			# SHLIB v$ver
+			# USH v$ver
 			by @amekusa
 
 			## Usage:
-			source shlib/load [options] <lib1> <lib2> ...
+			source ush/load [options] <lib1> <lib2> ...
 
 			## Options:
 			--prefix <prefix> : Custom prefix for functions (default: '_')
@@ -32,8 +32,8 @@
 			--cache-ttl <sec> : Cache lifespan (default: 3600) (Negative number means infinity)
 
 			## Examples:
-			source shlib/load util io         # Load util & io libs
-			source shlib/load -p my_ util io  # With prefix 'my_'
+			source ush/load util io         # Load util & io libs
+			source ush/load -p my_ util io  # With prefix 'my_'
 
 			EOF
 			;;
@@ -63,7 +63,7 @@
 			[ERROR] $label: invalid argument: '$1'
 
 			EOF
-			_shlib_load -h
+			_ush_load -h
 			return 1
 			;;
 		*)
@@ -77,28 +77,28 @@
 				return 1
 			fi
 			token="$prefix+$1@$ver"
-			if [[ "$_shlib_stack" == *";$token;"* ]]; then
+			if [[ "$_ush_stack" == *";$token;"* ]]; then
 				$verbose && echo "[INFO] $label: library '$token' already loaded. skipped"
 			else
-				if [[ "$_shlib_stack" == *";$prefix+$1@"* ]]; then
+				if [[ "$_ush_stack" == *";$prefix+$1@"* ]]; then
 					cat <<- EOF >&2
 					[ERROR] $label: library conflicted: '$token'
 					:: A different version of '$1' with prefix '$prefix' already loaded
 					:: Choosing other prefix would fix this problem
 
 					EOF
-					verbose && echo "[INFO] $label: list of loaded libraries: $_shlib_stack"
+					verbose && echo "[INFO] $label: list of loaded libraries: $_ush_stack"
 					return 1
 				fi
 
 				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
-				loader="@shlib_v0.1.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
+				loader="@ush_v0.1.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
 				if $cache
 					then loader="$loader --cache"
 					else loader="$loader --no-cache"
 				fi
 				$verbose && loader="$loader --verbose"
-				sedx="s|@shlib-load |$loader |g;s|_shlib_|$prefix|g"
+				sedx="s|@ush-load |$loader |g;s|_ush_|$prefix|g"
 
 				if $cache; then # Handle cache
 					cacheFile="$cacheDir/$token.sh"
@@ -119,11 +119,11 @@
 					eval "$(sed "$sedx" "$file")"
 					$verbose && echo "[INFO] $label: library loaded: '$token'"
 				fi
-				_shlib_stack="$_shlib_stack$token;"
+				_ush_stack="$_ush_stack$token;"
 			fi
 		esac
 		shift
 	done
 }
 
-@shlib_v0.1.0_load "$@"
+@ush_v0.1.0_load "$@"
