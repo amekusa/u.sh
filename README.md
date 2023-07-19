@@ -40,7 +40,8 @@ If you don't like it however, it can be changed to whatever you like with `--pre
 . shlib/load -p 'my_' util io     # Prefixise util & io with 'my_'
 ```
 
-Then, all the functions in the libraries you loaded are renamed to have the specified prefix instead of `_`.
+Then, all the functions in the specified libraries are renamed to have the specified prefix instead of `_`.
+
 
 ### OPTIONS LIST
 ```
