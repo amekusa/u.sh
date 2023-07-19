@@ -1,5 +1,5 @@
 ##
-#  shlib/util
+#  ush/util
 # ------------ -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
@@ -28,16 +28,16 @@
 #
 ##
 
-_shlib_die() {
+_ush_die() {
 	[ -z "$*" ] || echo "[ERROR] $*" >&2
 	exit 1
 }
 
-_shlib_q() {
+_ush_q() {
 	"$@" &> /dev/null
 }
 
-_shlib_if() {
+_ush_if() {
 	local eval=false
 	case "$1" in
 		-e|--eval) eval=true; shift ;;
@@ -61,9 +61,9 @@ _shlib_if() {
 	done
 	if [ -z "$mode" ]; then
 		cat <<- EOF >&2
-		[ERROR] _shlib_if(): syntax error
-		  _shlib_if [options] <condition> ? <A> : <B>
-		  _shlib_if [options] <A> ?: <B>
+		[ERROR] _ush_if(): syntax error
+		  _ush_if [options] <condition> ? <A> : <B>
+		  _ush_if [options] <A> ?: <B>
 
 		  Options:
 		    -e, --eval :  Use 'eval' for <condition>
@@ -91,11 +91,11 @@ _shlib_if() {
 	fi
 }
 
-_shlib_has-cmd() {
+_ush_has-cmd() {
 	command -v "$*" &> /dev/null
 }
 
-_shlib_fb() {
+_ush_fb() {
 	local arg
 	for arg in "$@"; do
 		if [ -n "$arg" ]; then
@@ -106,7 +106,7 @@ _shlib_fb() {
 	return 1
 }
 
-_shlib_fb-cmd() {
+_ush_fb-cmd() {
 	local full=false
 	case "$1" in
 		-f|--full) full=true; shift ;;
@@ -123,24 +123,24 @@ _shlib_fb-cmd() {
 	return 1
 }
 
-_shlib_chk-user() {
-	[ "$(whoami)" = "$1" ] || _shlib_die "run as $1"
+_ush_chk-user() {
+	[ "$(whoami)" = "$1" ] || _ush_die "run as $1"
 }
 
-_shlib_chk-cmd() {
+_ush_chk-cmd() {
 	local arg
 	for arg in "$@"; do
-		_shlib_has-cmd "$arg" || _shlib_die "command '$arg' is not found"
+		_ush_has-cmd "$arg" || _ush_die "command '$arg' is not found"
 	done
 }
 
-_shlib_join() {
+_ush_join() {
 	local sep="$1"; shift
 	local first="$1"; shift
 	printf "%s" "$first" "${@/#/$sep}"
 }
 
-_shlib_rpt() {
+_ush_rpt() {
 	local eval=false
 	case "$1" in
 		-e|--eval) eval=true; shift ;;
@@ -152,9 +152,9 @@ _shlib_rpt() {
 		-w|--with) shift ;;
 		*)
 			cat <<- EOF >&2
-			[ERROR] _shlib_rpt: syntax error
-			  _shlib_rpt <command> --with <list>
-			  _shlib_rpt --eval <command> --with <list>
+			[ERROR] _ush_rpt: syntax error
+			  _ush_rpt <command> --with <list>
+			  _ush_rpt --eval <command> --with <list>
 
 			  Options:
 			    -e, --eval :  Use 'eval' for <command>
@@ -176,7 +176,7 @@ _shlib_rpt() {
 	fi
 }
 
-_shlib_in() {
+_ush_in() {
 	local needle="$1"; shift
 	local each
 	for each in "$@"; do
@@ -185,14 +185,14 @@ _shlib_in() {
 	return 1
 }
 
-_shlib_lower() {
+_ush_lower() {
 	if [ $# -eq 0 ]
 		then tr '[A-Z]' '[a-z]'
 		else echo "$*" | tr '[A-Z]' '[a-z]'
 	fi
 }
 
-_shlib_upper() {
+_ush_upper() {
 	if [ $# -eq 0 ]
 		then tr '[a-z]' '[A-Z]'
 		else echo "$*" | tr '[a-z]' '[A-Z]'

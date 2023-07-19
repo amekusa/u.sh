@@ -4,7 +4,7 @@ base="$(dirname "$(dirname "$(realpath "$0")")")"
 ver="$1"; shift
 if [[ ! "$ver" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
 	cat <<- EOF >&2
-	# SHLIB/version
+	# USH/version
 	Rewrites version numbers
 
 	## Usage:

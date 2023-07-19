@@ -1,5 +1,5 @@
 ##
-#  shlib/io
+#  ush/io
 # ------------ -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
@@ -28,7 +28,7 @@
 #
 ##
 
-_shlib_file() {
+_ush_file() {
 	local path="$1"; shift
 	local dir=false
 	local realpath=false
@@ -41,7 +41,7 @@ _shlib_file() {
 			-b|--basename) basename=true ;;
 			-m|--mod) mod="$2"; shift ;;
 			-o|--own) own="$2"; shift ;;
-			*) echo "[ERROR] _shlib_file(): invalid argument: $1"; return 1
+			*) echo "[ERROR] _ush_file(): invalid argument: $1"; return 1
 		esac
 		shift
 	done
@@ -57,11 +57,11 @@ _shlib_file() {
 	echo "$r"
 }
 
-_shlib_dir() {
-	_shlib_file "$@" -d
+_ush_dir() {
+	_ush_file "$@" -d
 }
 
-_shlib_symlink() {
+_ush_symlink() {
 	local force=false
 	if [ "$1" = "-F" ]; then force=true; shift; fi
 	local src="$1"
@@ -72,7 +72,7 @@ _shlib_symlink() {
 	fi
 	if [ -e "$dst" ]; then
 		if $force; then
-			if ! _shlib_del "$dst"; then
+			if ! _ush_del "$dst"; then
 				echo "[FAIL] file already exists and cannot be deleted: $dst"
 				return 1
 			fi
@@ -84,7 +84,7 @@ _shlib_symlink() {
 	ln -sn "$src" "$dst"
 }
 
-_shlib_del() {
+_ush_del() {
 	[ -e "$1" ] || return 0
 	if [ -d "$1" ];
 		then rm -rf "$1"
@@ -92,7 +92,7 @@ _shlib_del() {
 	fi
 }
 
-_shlib_comment() {
+_ush_comment() {
 	local srch="$1"; shift
 	local file="$1"; shift
 	local sedx="s/^([[:blank:]]*)([^#[:blank:]])/\1# \2/"
@@ -103,7 +103,7 @@ _shlib_comment() {
 	fi
 }
 
-_shlib_uncomment() {
+_ush_uncomment() {
 	local srch="$1"; shift
 	local file="$1"; shift
 	local sedx="s/^([[:blank:]]*)#+[[:blank:]]*/\1/"
@@ -114,7 +114,7 @@ _shlib_uncomment() {
 	fi
 }
 
-_shlib_save-var() {
+_ush_save-var() {
 	local key="$1"; shift
 	local value="$1"; shift
 	local file="$1"; shift
@@ -135,7 +135,7 @@ _shlib_save-var() {
 	rm "$temp"
 }
 
-_shlib_load-var() {
+_ush_load-var() {
 	local key="$1"; shift
 	local file="$1"; shift
 	local find="^[[:space:]]*$key=\"?([^\"]*)\"?"
@@ -149,7 +149,7 @@ _shlib_load-var() {
 	return 1
 }
 
-_shlib_subst() {
+_ush_subst() {
 	local pat="{{%s}}" # find pattern
 	local sep="="      # key-value separator
 	local arg key value find sedx
@@ -170,7 +170,7 @@ _shlib_subst() {
 }
 
 # insert/update a section in a file
-_shlib_section() {
+_ush_section() {
 	local name="$1"; shift # section name
 	local file="$1"; shift # file to write
 	local ins="$(cat)"     # content to insert (stdin)
