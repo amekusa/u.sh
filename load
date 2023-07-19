@@ -1,7 +1,7 @@
 [ -n "$_shlib_stack" ] || _shlib_stack=";" # global
 
-@shlib_v1.0.0_load() {
-	local ver="1.0.0"
+@shlib_v0.1.0_load() {
+	local ver="0.1.0"
 	local base="$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")"
 	local label="SHLIB/load"
 	local prefix="_"
@@ -92,7 +92,7 @@
 				fi
 
 				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
-				loader="@shlib_v1.0.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
+				loader="@shlib_v0.1.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
 				if $cache
 					then loader="$loader --cache"
 					else loader="$loader --no-cache"
@@ -126,4 +126,4 @@
 	done
 }
 
-@shlib_v1.0.0_load "$@"
+@shlib_v0.1.0_load "$@"
