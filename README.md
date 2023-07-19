@@ -15,7 +15,6 @@ A collection of utility libraries for shell scripting in Bash/Zsh
 
 
 ### Via Git Submodule
-
 ```sh
 git submodule add https://github.com/amekusa/ush.git
 ```
@@ -24,6 +23,12 @@ Initialize/Update submodule:
 
 ```sh
 git submodule update --init
+```
+
+
+### Via NPM
+```sh
+npm i u.sh
 ```
 
 
