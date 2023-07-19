@@ -1,5 +1,13 @@
-# SHLIB
-Utility library for shell scripts
+# SHLIB v1.0.0
+A collection of utility libraries for shell scripting
+
+Written by [@amekusa](https://github.com/amekusa)
+
+
+## Features
+- Customizable function prefix
+- Does not load the same library twice
+- Supports caching to minimize loading overheads
 
 
 ## INSTALLATION
@@ -17,15 +25,32 @@ git submodule update --init
 
 
 ## USAGE
-Just `source` or `.(period)` the file(s) in `src` you want, like this:
-
 ```sh
-. shlib/src/util.sh
-. shlib/src/io.sh
+#!/usr/bin/env bash
+. shlib/load util     # Load util lib
+. shlib/load util io  # Load util & io libs
 ```
 
-> NOTE:
-	Most function names begin with `_(underscore)` for avoiding potential naming conflicts.
+By default, all the functions are prefixed with `_(underscore)`.
+If you don't like it however, it can be changed to whatever you like with `--prefix` or `-p` option:
+
+```sh
+#!/usr/bin/env bash
+. shlib/load --prefix 'my_' util  # Prefixise util with 'my_'
+. shlib/load -p 'my_' util io     # Prefixise util & io with 'my_'
+```
+
+Then, all the functions in the libraries you loaded are renamed to have the specified prefix instead of `_`.
+
+### OPTIONS LIST
+```
+--prefix <prefix> : Custom prefix for functions (default: '_')
+--p <prefix>
+--verbose, -v     : Output debug messages
+--cache, -c       : Enable cache (default: true)
+--no-cache        : Disable cache
+--cache-ttl <sec> : Cache lifespan (default: 3600) (Negative number means infinity)
+```
 
 
 ## DOCUMENTATIONS
