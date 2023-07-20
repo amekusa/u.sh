@@ -29,31 +29,31 @@
 
 @ush-load util io
 
-_task_save_to=""
-_task_exec="ALL"
-_task_opt_list=false
-_task_opt_force=false
-_task_opt_prompt=false
-_task_current=""
-_task_repeat=false
+_ush_task_save_to=""
+_ush_task_exec="ALL"
+_ush_task_opt_list=false
+_ush_task_opt_force=false
+_ush_task_opt_prompt=false
+_ush_task_current=""
+_ush_task_repeat=false
 
 # Initialize task system
 _ush_task-system() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-s|--save-to)
-			[ -z "$_task_save_to" ] || _die "task save file already specified"
-			_task_save_to="$2"; shift
-			[ -f "$_task_save_to" ] || touch "$_task_save_to"
+			[ -z "$_ush_task_save_to" ] || _die "task save file already specified"
+			_ush_task_save_to="$2"; shift
+			[ -f "$_ush_task_save_to" ] || touch "$_ush_task_save_to"
 			;;
 		-l|--list)
-			_task_opt_list=true
+			_ush_task_opt_list=true
 			;;
 		-F|--force)
-			_task_opt_force=true
+			_ush_task_opt_force=true
 			;;
 		-p|--prompt)
-			_task_opt_prompt=true
+			_ush_task_opt_prompt=true
 			;;
 		--reset)
 			_ush_reset-tasks
@@ -62,8 +62,8 @@ _ush_task-system() {
 			echo "invalid argument '$1'"
 			;;
 		*) # task selection
-			[ "$_task_exec" = "ALL" ] && _task_exec=()
-			_task_exec+=("$(_ush_upper "$1")")
+			[ "$_ush_task_exec" = "ALL" ] && _ush_task_exec=()
+			_ush_task_exec+=("$(_ush_upper "$1")")
 			;;
 		esac
 		shift
@@ -86,12 +86,12 @@ _ush_task() {
 	local repeat=false
 
 	# selective tasks
-	if [ "$_task_exec" != "ALL" ]; then
-		_in "$(_ush_upper "$task")" "${_task_exec[@]}" || return 1
+	if [ "$_ush_task_exec" != "ALL" ]; then
+		_in "$(_ush_upper "$task")" "${_ush_task_exec[@]}" || return 1
 	fi
 
 	# list mode
-	if $_task_opt_list; then
+	if $_ush_task_opt_list; then
 		local status="$(_ush_task-status "$task")"
 		if [ -z "$status" ];
 			then echo "$task"
@@ -101,10 +101,10 @@ _ush_task() {
 	fi
 
 	# check if the previous task finished
-	[ -z "$_task_current" ] || _die "the task:$_task_current is not done yet"
+	[ -z "$_ush_task_current" ] || _die "the task:$_ush_task_current is not done yet"
 
 	# check task status
-	if ! $_task_opt_force; then
+	if ! $_ush_task_opt_force; then
 		_ush_is-task "$task" DONE NEVER && return 1
 	fi
 
@@ -138,7 +138,7 @@ _ush_task() {
 
 	if _ush_is-task "$task" REPEAT; then
 		repeat=true
-	elif $_task_opt_prompt; then # prompt mode
+	elif $_ush_task_opt_prompt; then # prompt mode
 		local answer
 		while true; do
 			echo "Run task:$task ?"
@@ -153,8 +153,8 @@ _ush_task() {
 		done
 	fi
 
-	_task_current="$task"
-	_task_repeat=$repeat
+	_ush_task_current="$task"
+	_ush_task_repeat=$repeat
 
 	echo
 	echo "TASK: $task ..."
@@ -162,24 +162,24 @@ _ush_task() {
 
 # Sets the current task status to DONE
 _ush_ksat() {
-	[ -n "$_task_current" ] || _die "no active task"
-	local status=DONE; $_task_repeat && status=REPEAT
-	_ush_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
-	echo "TASK: $_task_current > $status"
-	_task_current=""
-	_task_repeat=false
+	[ -n "$_ush_task_current" ] || _die "no active task"
+	local status=DONE; $_ush_task_repeat && status=REPEAT
+	_ush_save-var "$_ush_task_current" "$status" "$_ush_task_save_to" || _die "failed to write: $_ush_task_save_to"
+	echo "TASK: $_ush_task_current > $status"
+	_ush_task_current=""
+	_ush_task_repeat=false
 }
 
 _ush_fail() {
-	echo "TASK: $_task_current > ERROR!"
+	echo "TASK: $_ush_task_current > ERROR!"
 	[ -z "$*" ] || echo " > $*"
-	_ush_save-var "$_task_current" FAILED "$_task_save_to"
+	_ush_save-var "$_ush_task_current" FAILED "$_ush_task_save_to"
 	exit 1
 }
 
 # Returns task status
 _ush_task-status() {
-	_ush_load-var "$1" "$_task_save_to"
+	_ush_load-var "$1" "$_ush_task_save_to"
 }
 
 # Checks task status
@@ -192,7 +192,7 @@ _ush_is-task() {
 _ush_set-task() {
 	local task="$1"
 	local status="$2"
-	_ush_save-var "$task" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	_ush_save-var "$task" "$status" "$_ush_task_save_to" || _die "failed to write: $_ush_task_save_to"
 }
 
 _ush_reset-task() {
@@ -200,5 +200,5 @@ _ush_reset-task() {
 }
 
 _ush_reset-tasks() {
-	echo "" > "$_task_save_to"
+	echo "" > "$_ush_task_save_to"
 }
