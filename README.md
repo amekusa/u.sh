@@ -14,9 +14,9 @@ A collection of utility libraries for shell scripting in Bash/Zsh
 ## INSTALLATION
 
 
-### Via Git Submodule
+### As Git Submodule
 ```sh
-git submodule add https://github.com/amekusa/ush.git
+git submodule add https://github.com/amekusa/u.sh.git
 ```
 
 Initialize/Update submodule:
@@ -35,8 +35,10 @@ npm i ushlib
 ## USAGE
 ```sh
 #!/usr/bin/env bash
-. ush/load util     # Load util lib
-. ush/load util io  # Load util & io libs
+. u.sh/load util     # Load util lib
+. u.sh/load util io  # Load util & io libs
+. node_modules/u.sh/load util  # If install U.SH via NPM,
+                               # you need to prepend 'node_modules/'
 ```
 
 By default, all the functions are prefixed with `_(underscore)`.
@@ -44,8 +46,8 @@ If you don't like it however, it can be changed to whatever you like with `--pre
 
 ```sh
 #!/usr/bin/env bash
-. ush/load --prefix 'my_' util  # Prefixise util with 'my_'
-. ush/load -p 'my_' util io     # Prefixise util & io with 'my_'
+. u.sh/load --prefix 'my_' util  # Prefixise util with 'my_'
+. u.sh/load -p 'my_' util io     # Prefixise util & io with 'my_'
 ```
 
 Then, all the functions in the specified libraries are renamed to have the specified prefix instead of `_`.
