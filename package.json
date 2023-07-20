@@ -1,6 +1,6 @@
 {
   "name": "ushlib",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A collection of utility libraries for shell scripting in Bash/Zsh",
   "files": [
     "load",
