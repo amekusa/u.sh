@@ -28,7 +28,7 @@ git submodule update --init
 
 ### Via NPM
 ```sh
-npm i u.sh
+npm i ushlib
 ```
 
 

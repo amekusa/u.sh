@@ -1,5 +1,5 @@
 {
-  "name": "u.sh",
+  "name": "ushlib",
   "version": "0.1.0",
   "description": "A collection of utility libraries for shell scripting in Bash/Zsh",
   "files": [
