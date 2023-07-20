@@ -1,7 +1,7 @@
 # U.SH
 A collection of utility libraries for shell scripting in Bash/Zsh
 
-- Current: `v0.1.0`
+- Current: `v0.1.1`
 - Author: [@amekusa](https://github.com/amekusa)
 
 
