@@ -1,7 +1,5 @@
-[ -n "$_shlib_format" ] && return; readonly _shlib_format=1
-
 ##
-#  shlib/format
+#  ush/format
 # -------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
@@ -38,7 +36,7 @@ LF=$'\n'
 TAB=$'\t'
 
 # Defines ANSI code variables
-_ansi() {
+_ush_ansi() {
 	ESC='\033'
 
 	while [ $# -gt 0 ]; do
@@ -50,11 +48,11 @@ _ansi() {
 				hex)  ESC='\x1b'   ;;
 				uni)  ESC='\u001b' ;;
 				char) ESC=$'\e'    ;;  # NOTE: This enables ANSI codes without passing '-e' option to echo
-				*) echo "[ERROR] _ansi: invalid argument '$1'" >&2
+				*) echo "[ERROR] _ush_ansi: invalid argument '$1'" >&2
 			esac
 			;;
 		-*)
-			echo "[ERROR] _ansi: invalid argument '$1'" >&2
+			echo "[ERROR] _ush_ansi: invalid argument '$1'" >&2
 			;;
 		esac
 		shift
@@ -77,16 +75,16 @@ _ansi() {
 	# reset
 	RST="${ESC}[0m"
 }
-_ansi;
+_ush_ansi;
 
-_success() {
+_ush_success() {
 	echo -e "[${GRN}SUCCESS${RST}] $*"
 }
 
-_error() {
+_ush_error() {
 	echo -e "[${RED}ERROR${RST}] $*"
 }
 
-_warn() {
+_ush_warn() {
 	echo -e "[${YLW}WARN${RST}] $*"
 }

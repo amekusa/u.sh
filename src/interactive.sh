@@ -1,7 +1,5 @@
-[ -n "$_shlib_interactive" ] && return; readonly _shlib_interactive=1
-
 ##
-#  shlib/interactive
+#  ush/interactive
 # ------------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
@@ -36,13 +34,13 @@
 # ---- functions ----
 
 # reload the login shell
-reload() {
+_ush_reload() {
 	echo "Reloading the login shell ($SHELL)..."
 	exec "$SHELL" --login
 }
 
 # save dir
-sd() {
+_ush_sd() {
 	if [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -92,12 +90,12 @@ sd() {
 }
 
 # cd & sd
-scd() {
-	cd $* && sd
+_ush_scd() {
+	cd $* && _ush_sd
 }
 
 # go to saved dir
-wd() {
+_ush_wd() {
 	if [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -110,7 +108,7 @@ wd() {
 		return 1
 	fi
 	if [ -z "$1" ]; then
-		sd -l
+		_ush_sd -l
 		return
 	fi
 	if [ -z "$_SAVED_DIRS" ]; then
@@ -145,7 +143,7 @@ wd() {
 }
 
 # mkdir & cd
-mkcd() {
+_ush_mkcd() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -164,7 +162,7 @@ mkcd() {
 }
 
 # find
-f() {
+_ush_f() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -179,7 +177,7 @@ f() {
 }
 
 # find & cd
-fcd() {
+_ush_fcd() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -199,7 +197,7 @@ fcd() {
 }
 
 # site health checker
-http() {
+_ush_http() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -219,7 +217,7 @@ http() {
 }
 
 # site health checker (HTTPS)
-https() {
+_ush_https() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
 		cat <<- EOF
 		Usage:
@@ -228,5 +226,5 @@ https() {
 		EOF
 		return 1
 	fi
-	http "$1" -s
+	_ush_http "$1" -s
 }

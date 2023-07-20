@@ -1,0 +1,129 @@
+[ -n "$_ush_stack" ] || _ush_stack=";" # global
+
+@ush_v0.1.0_load() {
+	local ver="0.1.0"
+	local base="$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")"
+	local label="USH/load"
+	local prefix="_"
+	local verbose=false
+
+	local cache=true
+	local cacheDir="$base/.cache"
+	local cacheTTL=3600 # Cache lifespan in seconds (Negative number means infinity)
+	local now="$(date +%s)"
+
+	local each file token data cacheFile sedx loader
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-h|--help)
+			cat <<- EOF
+			# USH v$ver
+			by @amekusa
+
+			## Usage:
+			source ush/load [options] <lib1> <lib2> ...
+
+			## Options:
+			--prefix <prefix> : Custom prefix for functions (default: '_')
+			--p <prefix>
+			--verbose, -v     : Output debug messages
+			--cache, -c       : Enable cache (default: true)
+			--no-cache        : Disable cache
+			--cache-ttl <sec> : Cache lifespan (default: 3600) (Negative number means infinity)
+
+			## Examples:
+			source ush/load util io         # Load util & io libs
+			source ush/load -p my_ util io  # With prefix 'my_'
+
+			EOF
+			;;
+		--base)
+			shift
+			base="$1"
+			;;
+		-p|--prefix)
+			shift
+			prefix="$1"
+			;;
+		-c|--cache)
+			cache=true
+			;;
+		--no-cache)
+			cache=false
+			;;
+		--cache-ttl)
+			shift
+			cacheTTL="$1"
+			;;
+		-v|--verbose)
+			verbose=true
+			;;
+		-*)
+			cat <<- EOF >&2
+			[ERROR] $label: invalid argument: '$1'
+
+			EOF
+			_ush_load -h
+			return 1
+			;;
+		*)
+			file="$base/src/$1.sh"
+			if [ ! -f "$file" ]; then
+				cat <<- EOF >&2
+				[ERROR] $label: library not found: '$1'
+				:: Searched path: "$file"
+
+				EOF
+				return 1
+			fi
+			token="$prefix+$1@$ver"
+			if [[ "$_ush_stack" == *";$token;"* ]]; then
+				$verbose && echo "[INFO] $label: library '$token' already loaded. skipped"
+			else
+				if [[ "$_ush_stack" == *";$prefix+$1@"* ]]; then
+					cat <<- EOF >&2
+					[ERROR] $label: library conflicted: '$token'
+					:: A different version of '$1' with prefix '$prefix' already loaded
+					:: Choosing other prefix would fix this problem
+
+					EOF
+					verbose && echo "[INFO] $label: list of loaded libraries: $_ush_stack"
+					return 1
+				fi
+
+				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
+				loader="@ush_v0.1.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
+				if $cache
+					then loader="$loader --cache"
+					else loader="$loader --no-cache"
+				fi
+				$verbose && loader="$loader --verbose"
+				sedx="s|@ush-load |$loader |g;s|_ush_|$prefix|g"
+
+				if $cache; then # Handle cache
+					cacheFile="$cacheDir/$token.sh"
+					if [[ -f "$cacheFile" && ( "$cacheTTL" -lt 0 || "$cacheTTL" -ge "$(("$now" - "$(date -r "$cacheFile" +%s)"))" ) ]]; then
+						source "$cacheFile"
+						$verbose && echo "[INFO] $label: cache loaded: '$cacheFile'"
+					else # Cache is not present OR expired
+						[ -d "$cacheDir" ] || mkdir -m 0755 "$cacheDir" || return 1
+						data="$(sed "$sedx" "$file")"
+						eval "$data"
+						echo "$data" > "$cacheFile" # Create cache
+						if $verbose; then
+							echo "[INFO] $label: library loaded: '$token'"
+							echo "[INFO] $label: cache updated: '$cacheFile'"
+						fi
+					fi
+				else # No need to handle cache
+					eval "$(sed "$sedx" "$file")"
+					$verbose && echo "[INFO] $label: library loaded: '$token'"
+				fi
+				_ush_stack="$_ush_stack$token;"
+			fi
+		esac
+		shift
+	done
+}
+
+@ush_v0.1.0_load "$@"

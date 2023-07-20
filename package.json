@@ -1,0 +1,26 @@
+{
+  "name": "ushlib",
+  "version": "0.1.0",
+  "description": "A collection of utility libraries for shell scripting in Bash/Zsh",
+  "files": [
+    "load",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amekusa/u.sh.git"
+  },
+  "keywords": [
+    "shellscript",
+    "util",
+    "library",
+    "bash",
+    "zsh"
+  ],
+  "author": "Satoshi Soma (https://github.com/amekusa)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/amekusa/u.sh/issues"
+  },
+  "homepage": "https://github.com/amekusa/u.sh#readme"
+}

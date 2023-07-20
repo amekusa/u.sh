@@ -1,11 +1,22 @@
-# shlib
-Utility library for shell scripts
+# U.SH
+A collection of utility libraries for shell scripting in Bash/Zsh
+
+- Current: `v0.1.0`
+- Author: [@amekusa](https://github.com/amekusa)
+
+
+## FEATURES
+- Customizable function prefix
+- Does not load the same library twice
+- Supports caching to minimize the loading overheads
+
 
 ## INSTALLATION
-Install as a git submodule:
 
+
+### Via Git Submodule
 ```sh
-git submodule add https://github.com/amekusa/shlib.git
+git submodule add https://github.com/amekusa/ush.git
 ```
 
 Initialize/Update submodule:
@@ -13,6 +24,47 @@ Initialize/Update submodule:
 ```sh
 git submodule update --init
 ```
+
+
+### Via NPM
+```sh
+npm i ushlib
+```
+
+
+## USAGE
+```sh
+#!/usr/bin/env bash
+. ush/load util     # Load util lib
+. ush/load util io  # Load util & io libs
+```
+
+By default, all the functions are prefixed with `_(underscore)`.
+If you don't like it however, it can be changed to whatever you like with `--prefix` or `-p` option:
+
+```sh
+#!/usr/bin/env bash
+. ush/load --prefix 'my_' util  # Prefixise util with 'my_'
+. ush/load -p 'my_' util io     # Prefixise util & io with 'my_'
+```
+
+Then, all the functions in the specified libraries are renamed to have the specified prefix instead of `_`.
+
+
+### Available Options
+```
+--prefix <prefix> : Custom prefix for functions (default: '_')
+--p <prefix>
+--verbose, -v     : Output debug messages
+--cache, -c       : Enable cache (default: true)
+--no-cache        : Disable cache
+--cache-ttl <sec> : Cache lifespan (default: 3600) (Negative number means infinity)
+```
+
+
+## DOCUMENTATIONS
+Not ready yet.
+
 
 ## LICENSE
 
