@@ -92,7 +92,7 @@
 			[ERROR] $label: invalid argument: '$1'
 
 			EOF
-			_ush_load -h
+			@ush_v0.1.1_load -h
 			return 1
 			;;
 		*)
