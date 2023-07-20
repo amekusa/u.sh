@@ -37,8 +37,7 @@ npm i ushlib
 #!/usr/bin/env bash
 . u.sh/load util     # Load util lib
 . u.sh/load util io  # Load util & io libs
-. node_modules/u.sh/load util  # If install U.SH via NPM,
-                               # you need to prepend 'node_modules/'
+. node_modules/ushlib/load util  # If you install U.SH via NPM
 ```
 
 By default, all the functions are prefixed with `_(underscore)`.
