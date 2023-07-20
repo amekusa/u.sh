@@ -52,5 +52,3 @@ sedx="$sedx;s|v[0-9]+\.[0-9]+\.[0-9]+|v$ver|g"
 for each in "${files[@]}"; do
 	data="$(sed -E "$sedx" "$each")" && echo "$data" > "$each"
 done
-
-npm version "$ver"
