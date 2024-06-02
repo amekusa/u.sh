@@ -38,6 +38,24 @@ _ush_reload() {
 	exec "$SHELL" --login
 }
 
+# show --help for a command with less
+_ush_help() {
+	if [ -z "$1" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Usage:
+		  $0 <cmd> :  Show --help for the specified command
+
+		EOF
+		return 1
+	fi
+	if command -v "$1" &> /dev/null; then
+		"$1" --help | less
+	else
+		echo "command not found: $1"
+		return 1
+	fi
+}
+
 # save dir
 _ush_sd() {
 	if [ "$1" = "-h" ]; then
