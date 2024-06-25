@@ -49,10 +49,14 @@ _ush_help() {
 		return 1
 	fi
 	if command -v "$1" &> /dev/null; then
-		if "$1" --help &> /dev/null
-			then "$1" --help | less -R
-			else man "$1"
+		echo "[help] showing: $1 --help"
+		"$1" --help
+		if man "$1" >/dev/null 2>&1; then
+			echo
+			echo "[help] man page found for $1"
+			man "$1"
 		fi
+		return
 	else
 		echo "command not found: '$1'"
 		return 1
