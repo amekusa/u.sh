@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+ext() {
+	if [ $# = 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Extracts a various types of archive.
+		- Usage:
+		  ext <archive>
+		EOF
+		return 1
+	fi
+	local f="$1"
+	if [[ "$f" =~ ^(.+)(\.(zip|7z|rar|tar\.t?(gz|xz|bz2?))) ]]; then
+		local dst="${BASH_REMATCH[1]}"
+		local ext="${BASH_REMATCH[3]}"
+		echo "Extracting: $f ..."
+		echo "> dst: $dst"
+		if [ -a "$dst" ]; then
+			if [ -d "$dst" ]; then
+				echo "[WRN] destination dir already exists"
+				while true; do
+					local answer; read -n 1 -p "Delete and recreate \"$dst\"? (Y/N) " answer; echo
+					case "$answer" in
+					[Yy])
+						rm -rf "$dst" || return 1
+						echo "Deleted: $dst"
+						break
+						;;
+					[Nn])
+						echo "Canceled."; return 1
+						;;
+					*) echo "Type Y or N." ;;
+					esac
+				done
+			else
+				echo "[ERR] destination path already exists"; return 1
+			fi
+		fi
+		mkdir -p "$dst" || return 1
+		echo "Created: $dst"
+		case "$ext" in
+		tar.bz|tar.bz2|tar.tbz|tar.tbz2) tar xjvf "$f" -C "$dst" ;;
+		tar.gz|tar.tgz) tar xzvf "$f" -C "$dst" ;;
+		tar.xz|tar.txz) tar xJvf "$f" -C "$dst" ;;
+		zip) unzip "$f" -d "$dst" ;;
+		rar) unrar x "$f" "$dst" ;;
+		7z) 7z x "$f" -o"$dst" ;;
+		esac
+	else
+		echo "[ERR] invalid file: $f"; return 1
+	fi
+}
+
+ext "$@"
+
