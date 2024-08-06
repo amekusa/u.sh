@@ -121,7 +121,7 @@ _ush_save-var() {
 	local temp="$(mktemp)"
 	local find="^([[:space:]]*)$key="
 	local found=false
-	local line
+	local IFS line
 	while IFS= read -r line; do
 		if [[ $line =~ $find ]]; then
 			line="${BASH_REMATCH[1]}$key=$value"
@@ -138,7 +138,7 @@ _ush_load-var() {
 	local key="$1"; shift
 	local file="$1"; shift
 	local find="^[[:space:]]*$key=\"?([^\"]*)\"?"
-	local line
+	local IFS line
 	while IFS= read -r line; do
 		if [[ $line =~ $find ]]; then
 			echo "${BASH_REMATCH[1]}"
@@ -177,7 +177,7 @@ _ush_section() {
 	local start="# [$name:START]" # section start marker
 	local end="# [$name:END]"     # section end marker
 	local ctx=0 # context
-	local line
+	local IFS line
 	while IFS= read -r line; do
 		case $ctx in
 		0) # before the section
