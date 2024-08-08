@@ -200,7 +200,7 @@ _main() {
 
 	# flush the tmp file
 	if [ -n "$tmp" ]; then
-		cp "$tmp" "$write" &&
+		cp -f "$tmp" "$write" &&
 		rm "$tmp"
 	fi
 
