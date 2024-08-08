@@ -3,7 +3,7 @@
 # === FEED.SH ===
 # by Satoshi Soma (github.com/amekusa)
 
-_version="0.1.0"
+_version="0.2.0"
 _interrupted=false
 _status=""
 _error=""
@@ -31,7 +31,12 @@ Options:
                    gets replaced with each line in the file.
   -r, --replace  : Specify the placeholder to be replaced in
                    the command. (default: {item})
-  -w, --write    : Specify a file to log items if the command failed.
+  -w, --write    : Specify a file to log failed items.
+                   The file can be passed to '--file' afterwards
+                   if you want to retry the failed items.
+  -u, --update   : Write to the same file as '--file'.
+                   Same as '-f items.txt -w items.txt'.
+                   If '-f' was multiple, only the 1st file gets overwritten.
   -i, --interval : Set iteration interval.
                    ex.) 5s = 5secs, 30m = 30mins, 1h = 1hour
   -p, --parallel : Run in parallel.
@@ -53,6 +58,7 @@ _main() {
 	local cmd="" # command to run
 	local replace="{item}" # placeholder to be replaced with each item
 	local write="" # file to write
+	local update=false # whether to overwrite '--file'
 	local interval="" # iteration interval
 	local parallel=false # whether to run in parallel
 
@@ -80,6 +86,9 @@ _main() {
 				;;
 			-i|--interval)
 				ctx=interval
+				;;
+			-u|--update)
+				update=true
 				;;
 			-p|--parallel)
 				parallel=true
@@ -121,7 +130,11 @@ _main() {
 
 	# prepare a tmp file for logging
 	local tmp
-	if [ -n "$write" ]; then
+	if [ -n "$write" ] || "$update"; then
+		if "$update"; then
+			[ -n "$write" ] && _die "'--write' and '--update' are mutually exclusive"
+			write="${file[0]}"
+		fi
 		tmp="$(mktemp)" || _die "failed to create a temp file"
 		cat <<- EOF > "$tmp"
 		# Failed Items @ $(date +'%F %H:%M:%S')
@@ -180,7 +193,7 @@ _main() {
 	cat <<- EOF
 
 	--- FINISHED ---
-	Total items:  $_total
+	 Total items: $_total
 	Failed items: $_fails
 
 	EOF
