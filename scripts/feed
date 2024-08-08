@@ -227,7 +227,7 @@ _run() {
 			EOF
 		fi
 		((_fails++))
-		if [ -z "$_status" ]; then
+		if [ -z "$_status" ] || [ "$_status" -eq 1 ]; then
 			_error="$_fails items failed"
 			_status=1
 		fi
