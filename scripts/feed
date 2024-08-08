@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+
+# === FEED.SH ===
+# by Satoshi Soma (github.com/amekusa)
+
+_version="0.1.0"
+_interrupted=false
+_status=""
+_error=""
+
+_total=0
+_fails=0
+
+_help() {
+	cat << EOF
+=== FEED.SH v$_version ===
+by Satoshi Soma (github.com/amekusa)
+
+Usage:
+  feed -f <file> -c <command>
+
+Example:
+  feed -f urls.txt -c wget {item}
+
+Options:
+  -h, --help     : Show this help.
+  -f, --file     : Specify file(s) to iterate over.
+                   Lines that start with '#' are ignored.
+  -c, --cmd      : Specify a command to run.
+                   Every occurrence of '{item}' in the command
+                   gets replaced with each line in the file.
+  -r, --replace  : Specify the placeholder to be replaced in
+                   the command. (default: {item})
+  -w, --write    : Specify a file to log items if the command failed.
+  -i, --interval : Set iteration interval.
+                   ex.) 5s = 5secs, 30m = 30mins, 1h = 1hour
+  -p, --parallel : Run in parallel.
+
+EOF
+}
+
+_die() {
+	echo "[ERROR] $1"
+	exit 1
+}
+
+_main() {
+	if [ -z "$1" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		_help; return 1
+	fi
+
+	local file=() # files to read
+	local cmd="" # command to run
+	local replace="{item}" # placeholder to be replaced with each item
+	local write="" # file to write
+	local interval="" # iteration interval
+	local parallel=false # whether to run in parallel
+
+	# parsing args
+	local ctx
+	local err=false
+	while [ $# -gt 0 ]; do
+		case "$ctx" in
+		cmd) # cmd context
+			cmd="$cmd $1"
+			;;
+		*)
+			case "$1" in
+			-f|--file)
+				ctx=file
+				;;
+			-c|--cmd)
+				ctx=cmd
+				;;
+			-r|--replace)
+				ctx=replace
+				;;
+			-w|--write)
+				ctx=write
+				;;
+			-i|--interval)
+				ctx=interval
+				;;
+			-p|--parallel)
+				parallel=true
+				;;
+			-*)
+				err=true
+				;;
+			*)
+				case "$ctx" in
+				# contextual args
+				file)
+					file+=("$1")
+					;;
+				replace)
+					replace="$1"
+					ctx=
+					;;
+				write)
+					write="$1"
+					ctx=
+					;;
+				interval)
+					interval="$1"
+					ctx=
+					;;
+				*)
+					err=true
+					;;
+				esac
+				;;
+			esac
+			;;
+		esac
+		$err && _die "invalid argument: '$1'"
+		shift
+	done
+	[ -z "$cmd" ] && _die "specify command to run"
+	cmd="${cmd:1}"
+
+	# prepare a tmp file for logging
+	local tmp
+	if [ -n "$write" ]; then
+		tmp="$(mktemp)" || _die "failed to create a temp file"
+		cat <<- EOF > "$tmp"
+		# Failed Items @ $(date +'%F %H:%M:%S')
+		# command: $cmd
+
+		EOF
+	fi
+
+	# main loop
+	local sleep
+	local f; for f in "${file[@]}"; do
+		local IFS line
+		while IFS= read -r line; do
+			# skip blank lines and comment lines
+			if [ -z "$line" ] || [[ "$line" =~ ^[[:space:]]*# ]]; then
+				continue
+			fi
+
+			((_total++))
+
+			# replace '{item}' in $cmd with $line
+			local _cmd="${cmd//"$replace"/"$line"}"
+
+			# handle ctrl+c
+			if "$_interrupted"; then
+				local now="$(date +'%F %H:%M:%S')"
+				echo "$now [CANCEL] $_cmd"
+				if [ -n "$tmp" ]; then
+					cat <<- EOF >> "$tmp"
+					# $now, interrupted by user
+					$line
+
+					EOF
+				fi
+				((_fails++))
+				continue
+			fi
+
+			# sleep for interval
+			[ -n "$sleep" ] && sleep "$sleep"
+
+			# run the command
+			if $parallel; then
+				_run "$_cmd" "$line" "$tmp" &
+			else
+				_run "$_cmd" "$line" "$tmp"
+			fi
+
+			# set interval
+			sleep="$interval"
+		done < "$f"
+	done
+
+	$parallel && wait
+
+	cat <<- EOF
+
+	--- FINISHED ---
+	Total items:  $_total
+	Failed items: $_fails
+
+	EOF
+
+	# flush the tmp file
+	if [ -n "$tmp" ]; then
+		cp "$tmp" "$write" &&
+		rm "$tmp"
+	fi
+
+	if [ -n "$_status" ]; then
+		echo "[ERROR] $_error"
+		return "$_status"
+	fi
+}
+
+_run() {
+	local out
+	if out="$(eval "$1" 2>&1)"; then
+		echo "$(date +'%F %H:%M:%S') [DONE] $1"
+		return 0
+	else
+		local code="$?"
+		local now="$(date +'%F %H:%M:%S')"
+		echo "$now [FAIL] $1 (code:$code, err:$out)"
+		if [ -n "$3" ]; then
+			cat <<- EOF >> "$3"
+			# $now, code:$code, err:$out
+			$2
+
+			EOF
+		fi
+		((_fails++))
+		if [ -z "$_status" ]; then
+			_error="$_fails items failed"
+			_status=1
+		fi
+		return 1
+	fi
+}
+
+_kill() {
+	echo
+	echo "Terminating..."
+	_interrupted=true
+	_error="interrupted by user"
+	_status=2
+}
+
+trap _kill INT
+
+_main "$@"
+
