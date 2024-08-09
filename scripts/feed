@@ -3,7 +3,7 @@
 # === FEED.SH ===
 # By Satoshi Soma (github.com/amekusa)
 
-_version="2.1.0"
+_version="2.1.1"
 
 _pid=$$
 _interrupted=false
@@ -11,6 +11,7 @@ _status=""
 _error=""
 _done=0
 _workers=0
+_junk=()
 
 _help() {
 	cat << EOF
@@ -171,6 +172,7 @@ _main() {
 			write="${file[0]}"
 		fi
 		tmp="$(mktemp)" || _die "failed to create a temp file"
+		_junk+=("$tmp")
 		cat <<- EOF > "$tmp"
 		# Failed Items @ $(date +'%F %H:%M:%S')
 		# command: $cmd
@@ -187,7 +189,8 @@ _main() {
 		if "$dedupe"; then
 			local _f
 			_f="$(mktemp)" || _die "failed to create a temp file"
-			awk '!seen[$0]++' "$f" > "$_f"
+			_junk+=("$_f")
+			awk '!seen[$0]++' "$f" > "$_f" || _die "failed to dedupe: $f"
 			f="$_f"
 		fi
 
@@ -247,8 +250,7 @@ _main() {
 
 	# flush the tmp file
 	if [ -n "$tmp" ]; then
-		cp -f "$tmp" "$write" &&
-		rm "$tmp"
+		cp -f "$tmp" "$write"
 	fi
 
 	if [ "$fails" -gt 0 ] && [ -z "$_status" ]; then
@@ -323,6 +325,13 @@ _random() {
 	echo "$((min + $RANDOM % (max - min)))"
 }
 
+_cleanup() {
+	local f
+	for f in "${_junk[@]}"; do
+		[ -f "$f" ] && rm "$f"
+	done
+}
+
 # signal handler: INT
 _on_SIGINT() {
 	echo
@@ -350,6 +359,7 @@ _on_SIGUSR2() {
 trap _on_SIGINT INT
 trap _on_SIGUSR1 USR1
 trap _on_SIGUSR2 USR2
+trap _cleanup EXIT
 
 _main "$@"
 
