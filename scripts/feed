@@ -3,7 +3,7 @@
 # === FEED.SH ===
 # By Satoshi Soma (github.com/amekusa)
 
-_version="2.0.0"
+_version="2.1.0"
 
 _pid=$$
 _interrupted=false
@@ -40,6 +40,7 @@ Options:
   -u, --update      : Save failed items to the same file as '--file'.
                       This option is a shortcut for like '-f items.txt -w items.txt'.
                       If '-f' was multiple, only the 1st file is chosen.
+  -d, --dedupe      : Ignore duplicate lines.
   -p, --parallel    : Max number of processes to run in parallel. (default: 0)
   -r, --retry       : Max number of retries for a failed item. (default: 0)
   -ri, --r-interval : Interval for each retry. (default: 1s)
@@ -69,6 +70,7 @@ _main() {
 	local subst="{item}" # placeholder to be replaced with each item
 	local write="" # file to write
 	local update=false # whether to overwrite '--file'
+	local dedupe=false # whether to ignore duplicate lines
 	local parallel=0 # max processes to run in parallel
 	local retry=0 # max retries
 	local r_int=1 # retry interval
@@ -110,6 +112,9 @@ _main() {
 				;;
 			-u|--update)
 				update=true
+				;;
+			-d|--dedupe)
+				dedupe=true
 				;;
 			-*)
 				err=true
@@ -173,9 +178,20 @@ _main() {
 		EOF
 	fi
 
-	# main loop
+	# for each file
 	local total=0
-	local f; for f in "${file[@]}"; do
+	local f
+	for f in "${file[@]}"; do
+
+		# remove duplicate lines and save to tmp
+		if "$dedupe"; then
+			local _f
+			_f="$(mktemp)" || _die "failed to create a temp file"
+			awk '!seen[$0]++' "$f" > "$_f"
+			f="$_f"
+		fi
+
+		# for each line
 		local sleep=0
 		local IFS line
 		while IFS= read -r line; do
