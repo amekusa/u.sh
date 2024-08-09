@@ -3,43 +3,47 @@
 # === FEED.SH ===
 # by Satoshi Soma (github.com/amekusa)
 
-_version="0.2.0"
+_version="1.0.0"
+
+_pid=$$
 _interrupted=false
 _status=""
 _error=""
-
-_total=0
-_fails=0
+_done=0
+_workers=0
 
 _help() {
 	cat << EOF
 === FEED.SH v$_version ===
-by Satoshi Soma (github.com/amekusa)
+By Satoshi Soma (github.com/amekusa)
 
 Usage:
   feed -f <file> -c <command>
 
 Example:
   feed -f urls.txt -c wget {item}
+  feed -f urls.txt -c 'wget {item}'
 
 Options:
   -h, --help     : Show this help.
-  -f, --file     : Specify file(s) to iterate over.
-                   Lines that start with '#' are ignored.
-  -c, --cmd      : Specify a command to run.
-                   Every occurrence of '{item}' in the command
-                   gets replaced with each line in the file.
-  -r, --replace  : Specify the placeholder to be replaced in
+  -f, --file     : Specify the file(s) to iterate over.
+                   Each line in the file is treated as an "item",
+                   and is passed to the command specified with '--cmd' option.
+                   Lines that are empty or start with '#' are ignored.
+  -c, --cmd      : Specify the command to run for each item.
+                   Upon running, every occurrence of '{item}' in the command
+                   gets replaced with the current item.
+  -r, --replace  : Specify the placeholder string to be replaced in
                    the command. (default: {item})
-  -w, --write    : Specify a file to log failed items.
-                   The file can be passed to '--file' afterwards
+  -w, --write    : Specify the file to save failed items.
+                   The file can be passed to '--file' afterwards,
                    if you want to retry the failed items.
-  -u, --update   : Write to the same file as '--file'.
-                   Same as '-f items.txt -w items.txt'.
+  -u, --update   : Save failed items to the same file as '--file'.
+                   This option is a shortcut for like '-f items.txt -w items.txt'.
                    If '-f' was multiple, only the 1st file gets overwritten.
-  -i, --interval : Set iteration interval.
-                   ex.) 5s = 5secs, 30m = 30mins, 1h = 1hour
-  -p, --parallel : Run in parallel.
+  -i, --interval : Set interval for eash iteration.
+                   Examples: 5s, 10m, 1h
+  -p, --parallel : Max number of processes to run in parallel. (default: 0)
 
 EOF
 }
@@ -60,7 +64,7 @@ _main() {
 	local write="" # file to write
 	local update=false # whether to overwrite '--file'
 	local interval="" # iteration interval
-	local parallel=false # whether to run in parallel
+	local parallel=0 # max processes to run in parallel
 
 	# parsing args
 	local ctx
@@ -87,11 +91,11 @@ _main() {
 			-i|--interval)
 				ctx=interval
 				;;
+			-p|--parallel)
+				ctx=parallel
+				;;
 			-u|--update)
 				update=true
-				;;
-			-p|--parallel)
-				parallel=true
 				;;
 			-*)
 				err=true
@@ -112,6 +116,10 @@ _main() {
 					;;
 				interval)
 					interval="$1"
+					ctx=
+					;;
+				parallel)
+					parallel="$1"
 					ctx=
 					;;
 				*)
@@ -144,8 +152,9 @@ _main() {
 	fi
 
 	# main loop
-	local sleep
+	local total=0
 	local f; for f in "${file[@]}"; do
+		local sleep
 		local IFS line
 		while IFS= read -r line; do
 			# skip blank lines and comment lines
@@ -153,7 +162,7 @@ _main() {
 				continue
 			fi
 
-			((_total++))
+			((total++))
 
 			# replace '{item}' in $cmd with $line
 			local _cmd="${cmd//"$replace"/"$line"}"
@@ -169,7 +178,6 @@ _main() {
 
 					EOF
 				fi
-				((_fails++))
 				continue
 			fi
 
@@ -177,7 +185,8 @@ _main() {
 			[ -n "$sleep" ] && sleep "$sleep"
 
 			# run the command
-			if $parallel; then
+			((_workers++))
+			if [ "$_workers" -le "$parallel" ]; then
 				_run "$_cmd" "$line" "$tmp" &
 			else
 				_run "$_cmd" "$line" "$tmp"
@@ -188,13 +197,14 @@ _main() {
 		done < "$f"
 	done
 
-	$parallel && wait
+	wait
 
+	local fails="$((total-_done))"
 	cat <<- EOF
 
 	--- FINISHED ---
-	 Total items: $_total
-	Failed items: $_fails
+	 Total items: $total
+	Failed items: $fails
 
 	EOF
 
@@ -202,6 +212,11 @@ _main() {
 	if [ -n "$tmp" ]; then
 		cp -f "$tmp" "$write" &&
 		rm "$tmp"
+	fi
+
+	if [ "$fails" -gt 0 ] && [ -z "$_status" ]; then
+		_error="$fails items failed"
+		_status=1
 	fi
 
 	if [ -n "$_status" ]; then
@@ -213,9 +228,11 @@ _main() {
 _run() {
 	local out
 	if out="$(eval "$1" 2>&1)"; then
+		# success
 		echo "$(date +'%F %H:%M:%S') [DONE] $1"
-		return 0
+		kill -s USR1 $_pid # send USR1 signal to self (or parent)
 	else
+		# failure
 		local code="$?"
 		local now="$(date +'%F %H:%M:%S')"
 		echo "$now [FAIL] $1 (code:$code, err:$out)"
@@ -226,24 +243,37 @@ _run() {
 
 			EOF
 		fi
-		((_fails++))
-		if [ -z "$_status" ] || [ "$_status" -eq 1 ]; then
-			_error="$_fails items failed"
-			_status=1
-		fi
-		return 1
+		kill -s USR2 $_pid # send USR2 signal to self (or parent)
 	fi
 }
 
-_kill() {
+# signal handler: INT
+_on_SIGINT() {
 	echo
 	echo "Terminating..."
 	_interrupted=true
 	_error="interrupted by user"
 	_status=2
+	wait
 }
 
-trap _kill INT
+# signal handler: USR1
+_on_SIGUSR1() {
+	((_done++))
+	((_workers--))
+	wait
+}
+
+# signal handler: USR2
+_on_SIGUSR2() {
+	((_workers--))
+	wait
+}
+
+# set signal handlers
+trap _on_SIGINT INT
+trap _on_SIGUSR1 USR1
+trap _on_SIGUSR2 USR2
 
 _main "$@"
 
