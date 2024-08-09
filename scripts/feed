@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # === FEED.SH ===
-# by Satoshi Soma (github.com/amekusa)
+# By Satoshi Soma (github.com/amekusa)
 
-_version="1.0.0"
+_version="1.2.0"
 
 _pid=$$
 _interrupted=false
@@ -20,7 +20,7 @@ By Satoshi Soma (github.com/amekusa)
 Usage:
   feed -f <file> -c <command>
 
-Example:
+Examples:
   feed -f urls.txt -c wget {item}
   feed -f urls.txt -c 'wget {item}'
 
@@ -41,8 +41,12 @@ Options:
   -u, --update   : Save failed items to the same file as '--file'.
                    This option is a shortcut for like '-f items.txt -w items.txt'.
                    If '-f' was multiple, only the 1st file gets overwritten.
-  -i, --interval : Set interval for eash iteration.
-                   Examples: 5s, 10m, 1h
+  -i, --interval : Set interval for each iteration. (default: 0)
+                   Examples: 5s = 5 seconds
+                             3m = 3 minutes
+                             1h = 1 hour
+                             1d = 24 hours
+                             3-6m = random seconds between 3m and 6m
   -p, --parallel : Max number of processes to run in parallel. (default: 0)
 
 EOF
@@ -136,6 +140,13 @@ _main() {
 	[ -z "$cmd" ] && _die "specify command to run"
 	cmd="${cmd:1}"
 
+	# parse random interval range
+	local i_min i_max
+	if [[ "$interval" =~ ^([0-9]+)-([0-9]+)([^0-9]*)$ ]]; then
+		i_min="$(_seconds "${BASH_REMATCH[1]}${BASH_REMATCH[3]}")"
+		i_max="$(_seconds "${BASH_REMATCH[2]}${BASH_REMATCH[3]}")"
+	fi
+
 	# prepare a tmp file for logging
 	local tmp
 	if [ -n "$write" ] || "$update"; then
@@ -170,7 +181,7 @@ _main() {
 			# handle ctrl+c
 			if "$_interrupted"; then
 				local now="$(date +'%F %H:%M:%S')"
-				echo "$now [CANCEL] $_cmd"
+				echo "$now [ABRT] $_cmd"
 				if [ -n "$tmp" ]; then
 					cat <<- EOF >> "$tmp"
 					# $now, interrupted by user
@@ -193,7 +204,10 @@ _main() {
 			fi
 
 			# set interval
-			sleep="$interval"
+			if [ -n "$i_min" ] && [ -n "$i_max" ]
+				then sleep="$(_random "$i_min" "$i_max")"
+				else sleep="$(_seconds "$interval")"
+			fi
 		done < "$f"
 	done
 
@@ -235,16 +249,37 @@ _run() {
 		# failure
 		local code="$?"
 		local now="$(date +'%F %H:%M:%S')"
-		echo "$now [FAIL] $1 (code:$code, err:$out)"
+		local err="${out//[$'\t\r\n']/ }" # replace line-breaks with spaces
+		echo "$now [FAIL] $1 (code:$code, err:$err)"
 		if [ -n "$3" ]; then
 			cat <<- EOF >> "$3"
-			# $now, code:$code, err:$out
+			# $now, code:$code, err:$err
 			$2
 
 			EOF
 		fi
 		kill -s USR2 $_pid # send USR2 signal to self (or parent)
 	fi
+}
+
+_seconds() {
+	if [[ "$1" =~ ^([0-9]+)([^0-9]*)$ ]]; then
+		local n="${BASH_REMATCH[1]}"
+		case "${BASH_REMATCH[2]}" in
+			m) ((n *= 60)) ;;
+			h) ((n *= 3600)) ;;
+			d) ((n *= 86400)) ;;
+		esac
+		echo "$n"
+	else
+		echo "$1"
+	fi
+}
+
+_random() {
+	local min="$1"
+	local max="$2"
+	echo "$((min + $RANDOM % (max - min)))"
 }
 
 # signal handler: INT
@@ -276,4 +311,7 @@ trap _on_SIGUSR1 USR1
 trap _on_SIGUSR2 USR2
 
 _main "$@"
+
+# FEED.SH
+# (c) 2024 Satoshi Soma / amekusa.com
 
