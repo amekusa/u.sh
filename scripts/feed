@@ -3,7 +3,7 @@
 # === FEED.SH ===
 # By Satoshi Soma (github.com/amekusa)
 
-_version="1.2.0"
+_version="2.0.0"
 
 _pid=$$
 _interrupted=false
@@ -25,29 +25,31 @@ Examples:
   feed -f urls.txt -c 'wget {item}'
 
 Options:
-  -h, --help     : Show this help.
-  -f, --file     : Specify the file(s) to iterate over.
-                   Each line in the file is treated as an "item",
-                   and is passed to the command specified with '--cmd' option.
-                   Lines that are empty or start with '#' are ignored.
-  -c, --cmd      : Specify the command to run for each item.
-                   Upon running, every occurrence of '{item}' in the command
-                   gets replaced with the current item.
-  -r, --replace  : Specify the placeholder string to be replaced in
-                   the command. (default: {item})
-  -w, --write    : Specify the file to save failed items.
-                   The file can be passed to '--file' afterwards,
-                   if you want to retry the failed items.
-  -u, --update   : Save failed items to the same file as '--file'.
-                   This option is a shortcut for like '-f items.txt -w items.txt'.
-                   If '-f' was multiple, only the 1st file gets overwritten.
-  -i, --interval : Set interval for each iteration. (default: 0)
-                   Examples: 5s = 5 seconds
-                             3m = 3 minutes
-                             1h = 1 hour
-                             1d = 24 hours
-                             3-6m = random seconds between 3m and 6m
-  -p, --parallel : Max number of processes to run in parallel. (default: 0)
+  -h, --help        : Show this help.
+  -f, --file        : File(s) to iterate over.
+                      Each line in the file is treated as an "item",
+                      and is passed to the command specified with '--cmd' option.
+                      Lines that are empty or start with '#' are ignored.
+  -c, --cmd         : Command to run for each item.
+                      Upon running, every occurrence of '{item}' in the command
+                      gets replaced with the current item.
+  -s, --subst       : Placeholder string to be replaced in the command. (default: {item})
+  -w, --write       : File to save failed items to.
+                      The file can be passed to '--file' afterwards,
+                      if you want to retry the failed items.
+  -u, --update      : Save failed items to the same file as '--file'.
+                      This option is a shortcut for like '-f items.txt -w items.txt'.
+                      If '-f' was multiple, only the 1st file is chosen.
+  -p, --parallel    : Max number of processes to run in parallel. (default: 0)
+  -r, --retry       : Max number of retries for a failed item. (default: 0)
+  -ri, --r-interval : Interval for each retry. (default: 1s)
+                      The format is the same as the one for '--interval'.
+  -i, --interval    : Interval for each iteration. (default: 0s)
+                      Format: 5s = 5 seconds
+                              3m = 3 minutes
+                              1h = 1 hour
+                              1d = 24 hours
+                              3-6m = random seconds between 3m and 6m
 
 EOF
 }
@@ -64,11 +66,13 @@ _main() {
 
 	local file=() # files to read
 	local cmd="" # command to run
-	local replace="{item}" # placeholder to be replaced with each item
+	local subst="{item}" # placeholder to be replaced with each item
 	local write="" # file to write
 	local update=false # whether to overwrite '--file'
-	local interval="" # iteration interval
 	local parallel=0 # max processes to run in parallel
+	local retry=0 # max retries
+	local r_int=1 # retry interval
+	local interval=0 # iteration interval
 
 	# parsing args
 	local ctx
@@ -86,17 +90,23 @@ _main() {
 			-c|--cmd)
 				ctx=cmd
 				;;
-			-r|--replace)
-				ctx=replace
+			-s|--subst)
+				ctx=subst
 				;;
 			-w|--write)
 				ctx=write
 				;;
-			-i|--interval)
-				ctx=interval
-				;;
 			-p|--parallel)
 				ctx=parallel
+				;;
+			-r|--retry)
+				ctx=retry
+				;;
+			-ri|--r-interval)
+				ctx=r_int
+				;;
+			-i|--interval)
+				ctx=interval
 				;;
 			-u|--update)
 				update=true
@@ -110,20 +120,28 @@ _main() {
 				file)
 					file+=("$1")
 					;;
-				replace)
-					replace="$1"
+				subst)
+					subst="$1"
 					ctx=
 					;;
 				write)
 					write="$1"
 					ctx=
 					;;
-				interval)
-					interval="$1"
-					ctx=
-					;;
 				parallel)
 					parallel="$1"
+					ctx=
+					;;
+				retry)
+					retry="$1"
+					ctx=
+					;;
+				r_int)
+					r_int="$1"
+					ctx=
+					;;
+				interval)
+					interval="$1"
 					ctx=
 					;;
 				*)
@@ -139,13 +157,6 @@ _main() {
 	done
 	[ -z "$cmd" ] && _die "specify command to run"
 	cmd="${cmd:1}"
-
-	# parse random interval range
-	local i_min i_max
-	if [[ "$interval" =~ ^([0-9]+)-([0-9]+)([^0-9]*)$ ]]; then
-		i_min="$(_seconds "${BASH_REMATCH[1]}${BASH_REMATCH[3]}")"
-		i_max="$(_seconds "${BASH_REMATCH[2]}${BASH_REMATCH[3]}")"
-	fi
 
 	# prepare a tmp file for logging
 	local tmp
@@ -165,7 +176,7 @@ _main() {
 	# main loop
 	local total=0
 	local f; for f in "${file[@]}"; do
-		local sleep
+		local sleep=0
 		local IFS line
 		while IFS= read -r line; do
 			# skip blank lines and comment lines
@@ -176,7 +187,7 @@ _main() {
 			((total++))
 
 			# replace '{item}' in $cmd with $line
-			local _cmd="${cmd//"$replace"/"$line"}"
+			local _cmd="${cmd//"$subst"/"$line"}"
 
 			# handle ctrl+c
 			if "$_interrupted"; then
@@ -193,27 +204,23 @@ _main() {
 			fi
 
 			# sleep for interval
-			[ -n "$sleep" ] && sleep "$sleep"
+			sleep "$sleep"
 
 			# run the command
 			((_workers++))
-			if [ "$_workers" -le "$parallel" ]; then
-				_run "$_cmd" "$line" "$tmp" &
-			else
-				_run "$_cmd" "$line" "$tmp"
+			if [ "$_workers" -le "$parallel" ]
+				then _run "$_cmd" "$retry" "$r_int" "$line" "$tmp" &
+				else _run "$_cmd" "$retry" "$r_int" "$line" "$tmp"
 			fi
 
 			# set interval
-			if [ -n "$i_min" ] && [ -n "$i_max" ]
-				then sleep="$(_random "$i_min" "$i_max")"
-				else sleep="$(_seconds "$interval")"
-			fi
+			sleep="$(_seconds "$interval")"
 		done < "$f"
 	done
 
 	wait
 
-	local fails="$((total-_done))"
+	local fails="$((total - _done))"
 	cat <<- EOF
 
 	--- FINISHED ---
@@ -240,21 +247,33 @@ _main() {
 }
 
 _run() {
-	local out
-	if out="$(eval "$1" 2>&1)"; then
+	local cmd="$1"; shift
+	local retry="$1"; shift
+	local r_int="$1"; shift
+	local line="$1"; shift
+	local tmp="$1"; shift
+
+	if out="$(eval "$cmd" 2>&1)"; then
 		# success
-		echo "$(date +'%F %H:%M:%S') [DONE] $1"
+		echo "$(date +'%F %H:%M:%S') [DONE] $cmd"
 		kill -s USR1 $_pid # send USR1 signal to self (or parent)
 	else
 		# failure
 		local code="$?"
 		local now="$(date +'%F %H:%M:%S')"
 		local err="${out//[$'\t\r\n']/ }" # replace line-breaks with spaces
-		echo "$now [FAIL] $1 (code:$code, err:$err)"
-		if [ -n "$3" ]; then
-			cat <<- EOF >> "$3"
+		echo "$now [FAIL] $cmd (code:$code, err:$err)"
+
+		if [ "$retry" -gt 0 ]; then
+			sleep "$(_seconds "$r_int")"
+			_run "$cmd" "$((retry - 1))" "$r_int" "$line" "$tmp"
+			return
+		fi
+
+		if [ -n "$tmp" ]; then
+			cat <<- EOF >> "$tmp"
 			# $now, code:$code, err:$err
-			$2
+			$line
 
 			EOF
 		fi
@@ -263,7 +282,13 @@ _run() {
 }
 
 _seconds() {
-	if [[ "$1" =~ ^([0-9]+)([^0-9]*)$ ]]; then
+	if [ -z "$1" ]; then
+		echo 0
+	elif [[ "$1" =~ ^([0-9]+)-([0-9]+)([^0-9]*)$ ]]; then
+		local min="$(_seconds "${BASH_REMATCH[1]}${BASH_REMATCH[3]}")"
+		local max="$(_seconds "${BASH_REMATCH[2]}${BASH_REMATCH[3]}")"
+		echo "$(_random "$min" "$max")"
+	elif [[ "$1" =~ ^([0-9]+)([^0-9]*)$ ]]; then
 		local n="${BASH_REMATCH[1]}"
 		case "${BASH_REMATCH[2]}" in
 			m) ((n *= 60)) ;;
