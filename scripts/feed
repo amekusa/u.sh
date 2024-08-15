@@ -3,10 +3,11 @@
 # === FEED.SH ===
 # By Satoshi Soma (github.com/amekusa)
 
-_version="2.1.1"
+_version="2.2.0"
 
 _pid=$$
-_interrupted=false
+_state=""
+_interrupted=0
 _status=""
 _error=""
 _done=0
@@ -26,38 +27,39 @@ Examples:
   feed -f urls.txt -c 'wget {item}'
 
 Options:
-  -h, --help        : Show this help.
-  -f, --file        : File(s) to iterate over.
-                      Each line in the file is treated as an "item",
-                      and is passed to the command specified with '--cmd' option.
-                      Lines that are empty or start with '#' are ignored.
-  -c, --cmd         : Command to run for each item.
-                      Upon running, every occurrence of '{item}' in the command
-                      gets replaced with the current item.
-  -s, --subst       : Placeholder string to be replaced in the command. (default: {item})
-  -w, --write       : File to save failed items to.
-                      The file can be passed to '--file' afterwards,
-                      if you want to retry the failed items.
-  -u, --update      : Save failed items to the same file as '--file'.
-                      This option is a shortcut for like '-f items.txt -w items.txt'.
-                      If '-f' was multiple, only the 1st file is chosen.
-  -d, --dedupe      : Ignore duplicate lines.
-  -p, --parallel    : Max number of processes to run in parallel. (default: 0)
-  -r, --retry       : Max number of retries for a failed item. (default: 0)
-  -ri, --r-interval : Interval for each retry. (default: 1s)
-                      The format is the same as the one for '--interval'.
-  -i, --interval    : Interval for each iteration. (default: 0s)
-                      Format: 5s = 5 seconds
-                              3m = 3 minutes
-                              1h = 1 hour
-                              1d = 24 hours
-                              3-6m = random seconds between 3m and 6m
+                -h, --help : Show this help.
+        -f, --file <file+> : File(s) to iterate over.
+                             Each line in the file is treated as an "item",
+                             and is passed to the command specified with '--cmd' option.
+                             Lines that are empty or start with '#' are ignored.
+               -q, --queue : Run in "queue" mode.
+           -c, --cmd <cmd> : Command to run for each item.
+                             Upon running, every occurrence of '{item}' in the command
+                             gets replaced with the current item.
+         -s, --subst <any> : Placeholder string to be replaced in the command. (default: {item})
+        -w, --write <file> : File to save failed items to.
+                             The file can be passed to '--file' afterwards,
+                             if you want to retry the failed items.
+              -u, --update : Save failed items to the same file as '--file'.
+                             This option is a shortcut for like '-f items.txt -w items.txt'.
+                             If '-f' was multiple, only the 1st file is chosen.
+              -d, --dedupe : Ignore duplicate lines.
+      -p, --parallel <num> : Max number of processes to run in parallel. (default: 0)
+         -r, --retry <num> : Max number of retries for a failed item. (default: 0)
+  -ri, --r-interval <time> : Interval for each retry. (default: 1s)
+                             The format is the same as the one for '--interval'.
+     -i, --interval <time> : Interval for each iteration. (default: 0s)
+                             Format: 5s = 5 seconds
+                                     3m = 3 minutes
+                                     1h = 1 hour
+                                     1d = 24 hours
+                                     3-6m = random seconds between 3m and 6m
 
 EOF
 }
 
 _die() {
-	echo "[ERROR] $1"
+	echo "[ERROR] $1" >&2
 	exit 1
 }
 
@@ -72,6 +74,7 @@ _main() {
 	local write="" # file to write
 	local update=false # whether to overwrite '--file'
 	local dedupe=false # whether to ignore duplicate lines
+	local queue=false # whether to run in queue mode
 	local parallel=0 # max processes to run in parallel
 	local retry=0 # max retries
 	local r_int=1 # retry interval
@@ -79,7 +82,6 @@ _main() {
 
 	# parsing args
 	local ctx
-	local err=false
 	while [ $# -gt 0 ]; do
 		case "$ctx" in
 		cmd) # cmd context
@@ -117,8 +119,11 @@ _main() {
 			-d|--dedupe)
 				dedupe=true
 				;;
+			-q|--queue)
+				queue=true
+				;;
 			-*)
-				err=true
+				_die "invalid option: '$1'"
 				;;
 			*)
 				case "$ctx" in
@@ -143,25 +148,26 @@ _main() {
 					ctx=
 					;;
 				r_int)
+					_seconds "$1" &>/dev/null || _die "invalid time format for '--r-interval'"
 					r_int="$1"
 					ctx=
 					;;
 				interval)
+					_seconds "$1" &>/dev/null || _die "invalid time format for '--interval'"
 					interval="$1"
 					ctx=
 					;;
 				*)
-					err=true
+					_die "invalid argument: '$1'"
 					;;
 				esac
 				;;
 			esac
 			;;
 		esac
-		$err && _die "invalid argument: '$1'"
 		shift
 	done
-	[ -z "$cmd" ] && _die "specify command to run"
+	[ -z "$cmd" ] && _die "'--cmd' option is required"
 	cmd="${cmd:1}"
 
 	# prepare a tmp file for logging
@@ -180,62 +186,100 @@ _main() {
 		EOF
 	fi
 
-	# for each file
 	local total=0
-	local f
-	for f in "${file[@]}"; do
-
-		# remove duplicate lines and save to tmp
-		if "$dedupe"; then
-			local _f
-			_f="$(mktemp)" || _die "failed to create a temp file"
-			_junk+=("$_f")
-			awk '!seen[$0]++' "$f" > "$_f" || _die "failed to dedupe: $f"
-			f="$_f"
+	local last=0
+	_feed() {
+		# skip blank lines and comment lines
+		if [ -z "$1" ] || [[ "$1" =~ ^[[:space:]]*# ]]; then
+			return 1
 		fi
 
-		# for each line
-		local sleep=0
-		local IFS line
-		while IFS= read -r line; do
-			# skip blank lines and comment lines
-			if [ -z "$line" ] || [[ "$line" =~ ^[[:space:]]*# ]]; then
-				continue
+		((total++))
+
+		# replace '{item}' in $cmd with $1
+		local _cmd="${cmd//"$subst"/"$1"}"
+
+		# handle ctrl+c
+		if [ "$_interrupted" -gt 0 ]; then
+			local now="$(date +'%F %H:%M:%S')"
+			echo "$now [ABRT] $_cmd"
+			if [ -n "$tmp" ]; then
+				cat <<- EOF >> "$tmp"
+				# $now, interrupted by user
+				$1
+
+				EOF
+			fi
+			return 1
+		fi
+
+		# sleep for interval
+		local sleep="$(($(_seconds "$interval") - ($(date +%s) - last)))" # interval - elapsed
+		[ "$sleep" -gt 0 ] && sleep "$sleep"
+
+		# run the command
+		((_workers++))
+		if [ "$_workers" -le "$parallel" ]
+			then _run "$_cmd" "$retry" "$r_int" "$1" "$tmp" &
+			else _run "$_cmd" "$retry" "$r_int" "$1" "$tmp"
+		fi
+
+		last="$(date +%s)"
+	}
+
+	# file mode
+	if [ -n "$file" ]; then
+		_state=FILE
+		_interrupted=0
+
+		# for each file
+		local f
+		for f in "${file[@]}"; do
+
+			# remove duplicate lines and save to tmp
+			if "$dedupe"; then
+				local _f
+				_f="$(mktemp)" || _die "failed to create a temp file"
+				_junk+=("$_f")
+				awk '!seen[$0]++' "$f" > "$_f" || _die "failed to dedupe: $f"
+				f="$_f"
 			fi
 
-			((total++))
+			# for each line
+			local IFS line
+			while IFS= read -r line; do
+				_feed "$line"
+			done < "$f"
+		done
+		_state=
+	fi
 
-			# replace '{item}' in $cmd with $line
-			local _cmd="${cmd//"$subst"/"$line"}"
+	# queue mode
+	if "$queue"; then
+		_state=QUEUE
+		_interrupted=0
+		cat <<- EOF
 
-			# handle ctrl+c
-			if "$_interrupted"; then
-				local now="$(date +'%F %H:%M:%S')"
-				echo "$now [ABRT] $_cmd"
-				if [ -n "$tmp" ]; then
-					cat <<- EOF >> "$tmp"
-					# $now, interrupted by user
-					$line
-
-					EOF
-				fi
-				continue
-			fi
-
-			# sleep for interval
-			sleep "$sleep"
-
-			# run the command
-			((_workers++))
-			if [ "$_workers" -le "$parallel" ]
-				then _run "$_cmd" "$retry" "$r_int" "$line" "$tmp" &
-				else _run "$_cmd" "$retry" "$r_int" "$line" "$tmp"
-			fi
-
-			# set interval
-			sleep="$(_seconds "$interval")"
-		done < "$f"
-	done
+		--- QUEUE MODE ---
+		Enter '--quit' or '--exit' to exit.
+		EOF
+		while true; do
+			echo
+			echo -n "Enter new item: "
+			local IFS line
+			IFS= read -r line || break
+			case "$line" in
+			--quit|--exit|\'--quit\'|\'--exit\')
+				break
+				;;
+			*)
+				_interrupted=0
+				_feed "$line"
+				;;
+			esac
+		done
+		_state=
+	fi
 
 	wait
 
@@ -259,7 +303,7 @@ _main() {
 	fi
 
 	if [ -n "$_status" ]; then
-		echo "[ERROR] $_error"
+		echo "[ERROR] $_error" >&2
 		return "$_status"
 	fi
 }
@@ -315,7 +359,8 @@ _seconds() {
 		esac
 		echo "$n"
 	else
-		echo "$1"
+		echo 0
+		return 1
 	fi
 }
 
@@ -330,15 +375,42 @@ _cleanup() {
 	for f in "${_junk[@]}"; do
 		[ -f "$f" ] && rm "$f"
 	done
+	pkill -P "$_pid"
 }
 
 # signal handler: INT
 _on_SIGINT() {
-	echo
-	echo "Terminating..."
-	_interrupted=true
-	_error="interrupted by user"
-	_status=2
+	((_interrupted++))
+	case "$_interrupted" in
+	1)
+		case "$_state" in
+		FILE)
+			cat <<- EOF
+
+			Terminating...
+			(Press CTRL+C again to force quit.)
+			EOF
+			_error="interrupted by user"
+			_status=2
+			;;
+		QUEUE)
+			cat <<- EOF
+
+			Type '--quit' or '--exit' to exit.
+			(Press CTRL+C again to force quit.)
+
+			EOF
+			echo -n "Enter new item: "
+			;;
+		*)
+			exit 1
+			;;
+		esac
+		;;
+	*)
+		exit 1
+		;;
+	esac
 	wait
 }
 
