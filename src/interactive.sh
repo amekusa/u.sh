@@ -27,8 +27,7 @@
 #  SOFTWARE.
 ##
 
-[ -z "$_SAVED_DIRS" ] && export _SAVED_DIRS=()
-
+[ -z ${_SAVED_DIRS+x} ] && export _SAVED_DIRS=()
 
 # ---- functions ----
 
