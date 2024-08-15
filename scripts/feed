@@ -3,7 +3,7 @@
 # === FEED.SH ===
 # By Satoshi Soma (github.com/amekusa)
 
-_version="2.2.0"
+_version="2.2.1"
 
 _pid=$$
 _state=""
@@ -202,7 +202,8 @@ _main() {
 		# handle ctrl+c
 		if [ "$_interrupted" -gt 0 ]; then
 			local now="$(date +'%F %H:%M:%S')"
-			echo "$now [ABRT] $_cmd"
+			echo
+			echo "# $now [ABRT] $_cmd"
 			if [ -n "$tmp" ]; then
 				cat <<- EOF >> "$tmp"
 				# $now, interrupted by user
@@ -262,12 +263,10 @@ _main() {
 
 		--- QUEUE MODE ---
 		Enter '--quit' or '--exit' to exit.
+
 		EOF
-		while true; do
-			echo
-			echo -n "Enter new item: "
-			local IFS line
-			IFS= read -r line || break
+		local IFS line
+		while IFS= read -r line; do
 			case "$line" in
 			--quit|--exit|\'--quit\'|\'--exit\')
 				break
@@ -315,16 +314,21 @@ _run() {
 	local line="$1"; shift
 	local tmp="$1"; shift
 
+	echo
+	echo "# $(date +'%F %H:%M:%S') [EXEC] $cmd"
+
 	if out="$(eval "$cmd" 2>&1)"; then
 		# success
-		echo "$(date +'%F %H:%M:%S') [DONE] $cmd"
+		echo
+		echo "# $(date +'%F %H:%M:%S') [DONE] $cmd"
 		kill -s USR1 $_pid # send USR1 signal to self (or parent)
 	else
 		# failure
 		local code="$?"
 		local now="$(date +'%F %H:%M:%S')"
 		local err="${out//[$'\t\r\n']/ }" # replace line-breaks with spaces
-		echo "$now [FAIL] $cmd (code:$code, err:$err)"
+		echo
+		echo "# $now [FAIL] $cmd (code:$code, err:$err)"
 
 		if [ "$retry" -gt 0 ]; then
 			sleep "$(_seconds "$r_int")"
@@ -400,7 +404,6 @@ _on_SIGINT() {
 			(Press CTRL+C again to force quit.)
 
 			EOF
-			echo -n "Enter new item: "
 			;;
 		*)
 			exit 1
