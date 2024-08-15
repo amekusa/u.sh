@@ -27,7 +27,7 @@
 #  SOFTWARE.
 ##
 
-[ -n "$_ush_stack" ] || _ush_stack=";" # global
+[ ${_ush_stack+x} ] || _ush_stack=";" # global
 
 @ush_v0.4.0_load() {
 	local ver="0.4.0"
