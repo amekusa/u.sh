@@ -3,7 +3,7 @@
 # === FEED.SH ===
 # By Satoshi Soma (github.com/amekusa)
 
-_version="2.2.1"
+_version="2.3.0"
 
 _pid=$$
 _state=""
@@ -37,6 +37,8 @@ Options:
                              Upon running, every occurrence of '{item}' in the command
                              gets replaced with the current item.
          -s, --subst <any> : Placeholder string to be replaced in the command. (default: {item})
+       -m, --match <regex> : Filter items with a regex pattern.
+                             Matched groups can be referenced with '(#N)' in '--cmd'.
         -w, --write <file> : File to save failed items to.
                              The file can be passed to '--file' afterwards,
                              if you want to retry the failed items.
@@ -71,6 +73,7 @@ _main() {
 	local file=() # files to read
 	local cmd="" # command to run
 	local subst="{item}" # placeholder to be replaced with each item
+	local match="" # regex filter
 	local write="" # file to write
 	local update=false # whether to overwrite '--file'
 	local dedupe=false # whether to ignore duplicate lines
@@ -97,6 +100,9 @@ _main() {
 				;;
 			-s|--subst)
 				ctx=subst
+				;;
+			-m|--match)
+				ctx=match
 				;;
 			-w|--write)
 				ctx=write
@@ -134,6 +140,9 @@ _main() {
 				subst)
 					subst="$1"
 					ctx=
+					;;
+				match)
+					match="$1"
 					;;
 				write)
 					write="$1"
@@ -194,10 +203,27 @@ _main() {
 			return 1
 		fi
 
+		# regex filtering
+		local regex=false
+		if [ -n "$match" ]; then
+			[[ "$1" =~ $match ]] || return 1
+			regex=true
+		fi
+
 		((total++))
 
-		# replace '{item}' in $cmd with $1
-		local _cmd="${cmd//"$subst"/"$1"}"
+		# command to execute
+		local _cmd="$cmd"
+
+		# replace regex groups
+		if "$regex"; then
+			for i in "${!BASH_REMATCH[@]}"; do
+				_cmd="${_cmd//"(#$i)"/"${BASH_REMATCH[$i]}"}"
+			done
+		fi
+
+		# replace '{item}' in with $1
+		_cmd="${_cmd//"$subst"/"$1"}"
 
 		# handle ctrl+c
 		if [ "$_interrupted" -gt 0 ]; then
