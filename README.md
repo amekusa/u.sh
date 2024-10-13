@@ -1,7 +1,7 @@
 # U.SH
 A collection of utility libraries for shell scripting in Bash/Zsh
 
-- Current: `v0.4.0`
+- Current: `v0.5.0`
 - Author: [@amekusa](https://github.com/amekusa)
 
 
@@ -19,12 +19,6 @@ A collection of utility libraries for shell scripting in Bash/Zsh
 git submodule add https://github.com/amekusa/u.sh.git
 ```
 
-Initialize/Update submodule:
-
-```sh
-git submodule update --init
-```
-
 
 ### Via NPM
 ```sh
@@ -37,8 +31,7 @@ npm i ushlib
 #!/usr/bin/env bash
 . u.sh/load util     # Load util lib
 . u.sh/load util io  # Load util & io libs
-. node_modules/u.sh/load util  # If install U.SH via NPM,
-                               # you need to prepend 'node_modules/'
+. node_modules/ushlib/load util  # NPM version
 ```
 
 By default, all the functions are prefixed with `_(underscore)`.
