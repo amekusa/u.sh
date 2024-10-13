@@ -1,6 +1,6 @@
 ##
-#  U.SH/task
-# ------------ -
+#  U.SH - Task System
+# -------------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
 #

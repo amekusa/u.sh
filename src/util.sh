@@ -1,6 +1,6 @@
 ##
-#  U.SH/util
-# ------------ -
+#  U.SH - General Purpose Utility
+# -------------------------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
 #

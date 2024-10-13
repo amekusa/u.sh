@@ -1,6 +1,6 @@
 ##
-#  U.SH/interactive
-# ------------------- -
+#  U.SH - Interactive Utility
+# ---------------------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
 #
