@@ -1,6 +1,6 @@
 ##
-#  U.SH/format
-# -------------- -
+#  U.SH - Text Formatting Utility
+# -------------------------------- -
 #  author: Satoshi Soma (https://amekusa.com)
 # ============================================ *
 #
