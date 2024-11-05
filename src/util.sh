@@ -144,9 +144,7 @@ _ush_rpt() {
 	case "$1" in
 		-e|--eval) eval=true; shift ;;
 	esac
-
 	local cmd="$1"; shift
-
 	case "$1" in
 		-w|--with) shift ;;
 		*)
@@ -162,7 +160,6 @@ _ush_rpt() {
 			EOF
 			return 1
 	esac
-
 	local each
 	if $eval; then
 		for each in "$@"; do
