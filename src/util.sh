@@ -110,11 +110,11 @@ _ush_fb-cmd() {
 	case "$1" in
 		-f|--full) full=true; shift ;;
 	esac
-	local arg found
+	local arg
 	for arg in "$@"; do
-		found="$(which "$arg")" || continue
+		command -v "$arg" &> /dev/null || continue
 		if $full
-			then echo "$found"
+			then echo "$(which "$arg")"
 			else echo "$arg"
 		fi
 		return
