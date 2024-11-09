@@ -105,20 +105,22 @@ _ush_fb() {
 	return 1
 }
 
+# fallback commands
 _ush_fb-cmd() {
 	local full=false
 	case "$1" in
 		-f|--full) full=true; shift ;;
 	esac
-	local arg
+	local arg r
 	for arg in "$@"; do
-		command -v "$arg" &> /dev/null || continue
+		r="$(command -v "$arg")" || continue
 		if $full
-			then echo "$(which "$arg")"
+			then echo "$r"
 			else echo "$arg"
 		fi
-		return
+		return 0
 	done
+	echo "$arg"
 	return 1
 }
 
