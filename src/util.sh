@@ -128,11 +128,11 @@ _ush_fb-cmd() {
 	case "$1" in
 		-f|--full) full=true; shift ;;
 	esac
-	local arg r
+	local arg
 	for arg in "$@"; do
-		r="$(command -v "$arg")" || continue
+		command -v "$arg" &> /dev/null || continue
 		if $full
-			then echo "$r"
+			then echo "$(command -v "$arg")"
 			else echo "$arg"
 		fi
 		return
