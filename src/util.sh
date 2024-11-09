@@ -91,9 +91,26 @@ _ush_if() {
 }
 
 _ush_has-cmd() {
+	_the_cmd="$1"
 	command -v "$*" &> /dev/null
 }
 
+_ush_has-path() {
+	_the_path="$1"
+	[ -e "$1" ]
+}
+
+_ush_has-file() {
+	_the_file="$1"
+	[ -f "$1" ]
+}
+
+_ush_has-dir() {
+	_the_dir="$1"
+	[ -d "$1" ]
+}
+
+# fallback args
 _ush_fb() {
 	local arg
 	for arg in "$@"; do
@@ -118,7 +135,7 @@ _ush_fb-cmd() {
 			then echo "$r"
 			else echo "$arg"
 		fi
-		return 0
+		return
 	done
 	echo "$arg"
 	return 1
