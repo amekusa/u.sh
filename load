@@ -27,6 +27,8 @@
 #  SOFTWARE.
 ##
 
+_ush_DEBUG=false
+
 [ ${_ush_stack+x} ] || _ush_stack=";" # global
 
 @ush_v0.5.0_load() {
@@ -130,6 +132,7 @@
 				sedx="s|@ush-load |$loader |g;s|_ush_|$prefix|g"
 
 				if $cache; then # Handle cache
+					$_ush_DEBUG && rm -rf "$cacheDir"
 					cacheFile="$cacheDir/$token.sh"
 					if [[ -f "$cacheFile" && ( "$cacheTTL" -lt 0 || "$cacheTTL" -ge "$(("$now" - "$(date -r "$cacheFile" +%s)"))" ) ]]; then
 						source "$cacheFile"
