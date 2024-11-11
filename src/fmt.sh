@@ -47,11 +47,11 @@ _ush_ansi() {
 				hex)  ESC='\x1b'   ;;
 				uni)  ESC='\u001b' ;;
 				char) ESC=$'\e'    ;;  # NOTE: This enables ANSI codes without passing '-e' option to echo
-				*) echo "[ERROR] _ush_ansi: invalid argument '$1'" >&2
+				*) echo "[ERROR] _ush_ansi(): invalid argument '$1'" >&2
 			esac
 			;;
 		-*)
-			echo "[ERROR] _ush_ansi: invalid argument '$1'" >&2
+			echo "[ERROR] _ush_ansi(): invalid argument '$1'" >&2
 			;;
 		esac
 		shift
