@@ -70,6 +70,7 @@ _ush_symlink() {
 		return 1
 	fi
 	if [ -e "$dst" ]; then
+		[ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ] && return 0
 		if $force; then
 			if ! _ush_del "$dst"; then
 				echo "[FAIL] file already exists and cannot be deleted: $dst"
