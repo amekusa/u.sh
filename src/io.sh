@@ -66,18 +66,18 @@ _ush_symlink() {
 	local src="$1"
 	local dst="$2"
 	if [ ! -e "$src" ]; then
-		echo "[FAIL] file not found: $src"
+		echo "[ERROR] _ush_symlink(): file not found: $src"
 		return 1
 	fi
 	if [ -e "$dst" ]; then
 		[ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ] && return 0
 		if $force; then
 			if ! _ush_del "$dst"; then
-				echo "[FAIL] file already exists and cannot be deleted: $dst"
+				echo "[ERROR] _ush_symlink(): file already exists and cannot be deleted: $dst"
 				return 1
 			fi
 		else
-			echo "[FAIL] file already exists: $dst"
+			echo "[ERROR] _ush_symlink(): file already exists: $dst"
 			return 1
 		fi
 	fi
