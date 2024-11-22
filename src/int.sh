@@ -34,7 +34,7 @@
 # reload the login shell
 _ush_reload() {
 	echo "Reloading the login shell ($SHELL)..."
-	exec "$SHELL" --login
+	exec -l "$SHELL"
 }
 
 # show --help for a command with less
