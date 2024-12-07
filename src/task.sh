@@ -74,16 +74,47 @@ _ush_task-system() {
 # Use this function to define a task
 #
 # Usage:
-#   if task TASK_NAME; then
+#   if _ush_task TASK_NAME; then
 #   	# do stuff
-#   ksat; fi
+#   fi
 #
 _ush_task() {
-	local task="$1"; shift
-	[ -n "$task" ] || _die "argument missing"
+	# task name
+	local task
 
-	# repeat task?
+	# parse args
+	local context=ROOT
+	local valid=true
 	local repeat=false
+	while [ $# -gt 0 ]; do
+		case "$context" in
+		DEPS) # check dependencies
+			_ush_is-task "$1" DONE || return 1
+			;;
+		ROOT)
+			case "$1" in
+			-d|--depend)
+				context=DEPS
+				;;
+			-r|--repeat)
+				repeat=true
+				;;
+			*)
+				if [ -z "$task" ]
+					then task="$1"
+					else valid=false
+				fi
+			esac
+		esac
+		$valid || _die "invalid argument '$1'"
+		shift
+	done
+
+	# task name = function name
+	if [ -z "$task" ]; then
+		[ ${#FUNCNAME[@]} -lt 3 ] || _die "task name is missing"
+		task="${FUNCNAME[$(( ${#FUNCNAME[@]} - 2 ))]}"
+	fi
 
 	# selective tasks
 	if [ "$_task_exec" != "ALL" ]; then
@@ -100,41 +131,13 @@ _ush_task() {
 		return 1
 	fi
 
-	# check if the previous task finished
-	[ -z "$_task_current" ] || _die "the task:$_task_current is not done yet"
+	# finish the previous task
+	[ -z "$_task_current" ] || _ush_done
 
 	# check task status
 	if ! $_task_opt_force; then
 		_ush_is-task "$task" DONE NEVER && return 1
 	fi
-
-	# parse args
-	local context valid
-	while [ $# -gt 0 ]; do
-		valid=true
-
-		case "$1" in
-		-*) # non-contextual args
-			context=""
-			case "$1" in
-			-r|--repeat)
-				repeat=true ;;
-			-d|--depend)
-				context=DEPS ;;
-			*) valid=false
-			esac
-			;;
-		*) # contextual args
-			case "$context" in
-			DEPS) # check dependencies
-				_ush_is-task "$1" DONE || return 1 ;;
-			*) valid=false
-			esac
-		esac
-
-		$valid || _die "invalid argument '$1'"
-		shift
-	done
 
 	if _ush_is-task "$task" REPEAT; then
 		repeat=true
@@ -161,7 +164,7 @@ _ush_task() {
 }
 
 # Sets the current task status to DONE
-_ush_ksat() {
+_ush_done() {
 	[ -n "$_task_current" ] || _die "no active task"
 	local status=DONE; $_task_repeat && status=REPEAT
 	_ush_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
