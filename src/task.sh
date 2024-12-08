@@ -37,7 +37,8 @@ _task_opt_prompt=false
 _task_current=""
 _task_repeat=false
 
-# Initialize task system
+##
+# Initialize the task system
 _ush_task-system() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
@@ -181,6 +182,7 @@ _ush_task() {
 	echo "TASK: $task ..."
 }
 
+##
 # Sets the current task status to DONE
 _ush_done() {
 	[ -n "$_task_current" ] || _die "no active task"
@@ -191,6 +193,8 @@ _ush_done() {
 	_task_repeat=false
 }
 
+##
+# Sets the current task status to FAILED
 _ush_fail() {
 	echo "TASK: $_task_current > ERROR!"
 	[ -z "$*" ] || echo " > $*"
@@ -198,17 +202,20 @@ _ush_fail() {
 	exit 1
 }
 
+##
 # Returns task status
 _ush_task-status() {
 	_ush_load-var "$1" "$_task_save_to"
 }
 
+##
 # Checks task status
 _ush_is-task() {
 	local status="$(_ush_task-status "$1")"; shift
 	_in "$status" "$@"
 }
 
+##
 # Sets task status
 _ush_set-task() {
 	local task="$1"
@@ -223,3 +230,4 @@ _ush_reset-task() {
 _ush_reset-tasks() {
 	echo "" > "$_task_save_to"
 }
+
