@@ -94,8 +94,14 @@ _ush_task-system-on-exit() {
 #
 # Usage:
 #   if _ush_task TASK_NAME; then
-#   	# do stuff
+#     # do stuff
 #   fi
+#
+# Another usage:
+#   TASK_NAME() {
+#     _ush_task
+#     # do stuff
+#   }
 #
 _ush_task() {
 	# task name
