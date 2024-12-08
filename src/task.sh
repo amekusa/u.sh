@@ -209,6 +209,8 @@ _ush_fail() {
 	echo "TASK: $_task_current > ERROR!"
 	[ -z "$*" ] || echo " > $*"
 	_ush_save-var "$_task_current" FAILED "$_task_save_to"
+	_task_current=""
+	_task_repeat=false
 	exit 1
 }
 
