@@ -83,8 +83,14 @@ _ush_task-system-on-int() {
 ##
 # Action on exit
 _ush_task-system-on-exit() {
-	# if a task is running, complete
-	[ -z "$_task_current" ] || _ush_done
+	local code="$?"
+	if [ -z "$_task_current" ]; then
+		if [ "$code" -eq 0 ]
+			then _ush_done
+			else _ush_fail
+		fi
+	fi
+	exit "$code"
 }
 
 ##
