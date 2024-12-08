@@ -84,7 +84,7 @@ _ush_task-system-on-int() {
 # Action on exit
 _ush_task-system-on-exit() {
 	local code="$?"
-	if [ -z "$_task_current" ]; then
+	if [ -n "$_task_current" ]; then
 		if [ "$code" -eq 0 ]
 			then _ush_done
 			else _ush_fail
