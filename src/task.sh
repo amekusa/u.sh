@@ -44,7 +44,7 @@ _ush_task-system() {
 		case "$1" in
 		-s|--save-to)
 			_task_save_to="$2"; shift
-			[ -f "$_task_save_to" ] || touch "$_task_save_to" || _die "failed to create '$_task_save_to'"
+			[ -f "$_task_save_to" ] || touch "$_task_save_to" || _die "failed to create: $_task_save_to"
 			;;
 		-l|--list)
 			_task_opt_list=true
