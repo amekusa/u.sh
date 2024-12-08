@@ -31,8 +31,8 @@ _ush_DEBUG=false
 
 [ -n "$_ush_stack" ] || _ush_stack=";" # global
 
-@ush_v0.6.0_load() {
-	local ver="0.6.0"
+@ush_v0.7.0_load() {
+	local ver="0.7.0"
 	local base="$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")"
 	local label="USH/load"
 	local prefix="_"
@@ -123,7 +123,7 @@ _ush_DEBUG=false
 				fi
 
 				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
-				loader="@ush_v0.6.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
+				loader="@ush_v0.7.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
 				if $cache
 					then loader="$loader --cache"
 					else loader="$loader --no-cache"
@@ -158,4 +158,4 @@ _ush_DEBUG=false
 	done
 }
 
-@ush_v0.6.0_load "$@"
+@ush_v0.7.0_load "$@"
