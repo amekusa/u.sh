@@ -29,7 +29,7 @@
 
 _ush_DEBUG=false
 
-[ ${_ush_stack+x} ] || _ush_stack=";" # global
+[ -n "$_ush_stack" ] || _ush_stack=";" # global
 
 @ush_v0.6.0_load() {
 	local ver="0.6.0"
