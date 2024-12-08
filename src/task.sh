@@ -35,7 +35,6 @@ _task_opt_list=false
 _task_opt_force=false
 _task_opt_prompt=false
 _task_current=""
-_task_repeat=false
 
 ##
 # Initialize the task system
@@ -164,20 +163,18 @@ _ush_task() {
 	[ -z "$_task_current" ] || _ush_done
 
 	# check task status
-	if ! $_task_opt_force; then
+	if ! $_task_opt_force && ! $repeat; then
 		_ush_is-task "$task" DONE NEVER && return 1
 	fi
 
-	if _ush_is-task "$task" REPEAT; then
-		repeat=true
-	elif $_task_opt_prompt; then # prompt mode
+	# prompt mode
+	if $_task_opt_prompt; then
 		local answer
 		while true; do
 			echo "Run task:$task ?"
-			read -n 1 -p "[ (R)un / (A)lways / (S)kip / (N)ever / (D)one already ] " answer; echo
+			read -n 1 -p "[ (R)un / (S)kip / (N)ever / (D)one already ] " answer; echo
 			case "$answer" in
 			[Rr]) echo "> Run";          break ;;
-			[Aa]) echo "> Always";       repeat=true; break ;;
 			[Ss]) echo "> Skip";         return 1 ;;
 			[Nn]) echo "> Never";        _ush_set-task "$task" NEVER; return 1 ;;
 			[Dd]) echo "> Done already"; _ush_set-task "$task" DONE;  return 1 ;;
@@ -186,7 +183,6 @@ _ush_task() {
 	fi
 
 	_task_current="$task"
-	_task_repeat=$repeat
 
 	echo
 	echo "TASK: $task ..."
@@ -196,11 +192,9 @@ _ush_task() {
 # Sets the current task status to DONE
 _ush_done() {
 	[ -n "$_task_current" ] || _die "no active task"
-	local status=DONE; $_task_repeat && status=REPEAT
-	echo "TASK: $_task_current > $status"
-	_ush_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
+	echo "TASK: $_task_current > DONE"
+	_ush_save-var "$_task_current" DONE "$_task_save_to" || _die "failed to write: $_task_save_to"
 	_task_current=""
-	_task_repeat=false
 }
 
 ##
@@ -210,7 +204,6 @@ _ush_fail() {
 	[ -z "$*" ] || echo " > $*"
 	_ush_save-var "$_task_current" FAILED "$_task_save_to"
 	_task_current=""
-	_task_repeat=false
 	exit 1
 }
 
