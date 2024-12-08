@@ -56,7 +56,7 @@ _ush_task-system() {
 		-p|--prompt)
 			_task_opt_prompt=true
 			;;
-		--reset)
+		-r|--reset)
 			_ush_reset-tasks
 			;;
 		-*)
