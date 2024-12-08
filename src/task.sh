@@ -76,7 +76,7 @@ _ush_task-system() {
 ##
 # Action on interruption
 _ush_task-system-on-int() {
-	[ -z "$_task_current" ] || _ush_fail
+	[ -z "$_task_current" ] || _ush_fail "interrupted"
 	exit 1
 }
 
