@@ -43,9 +43,8 @@ _ush_task-system() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		-s|--save-to)
-			[ -z "$_task_save_to" ] || _die "task save file already specified"
 			_task_save_to="$2"; shift
-			[ -f "$_task_save_to" ] || touch "$_task_save_to"
+			[ -f "$_task_save_to" ] || touch "$_task_save_to" || _die "failed to create '$_task_save_to'"
 			;;
 		-l|--list)
 			_task_opt_list=true
@@ -65,7 +64,6 @@ _ush_task-system() {
 		*) # task selection
 			[ "$_task_exec" = "ALL" ] && _task_exec=()
 			_task_exec+=("$(_ush_upper "$1")")
-			;;
 		esac
 		shift
 	done
