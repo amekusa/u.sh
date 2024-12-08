@@ -68,6 +68,24 @@ _ush_task-system() {
 		esac
 		shift
 	done
+
+	# hook
+	trap _ush_task-system-on-int  INT
+	trap _ush_task-system-on-exit EXIT
+}
+
+##
+# Action on interruption
+_ush_task-system-on-int() {
+	# if a task is running, fail
+	[ -z "$_task_current" ] || _ush_fail
+}
+
+##
+# Action on exit
+_ush_task-system-on-exit() {
+	# if a task is running, complete
+	[ -z "$_task_current" ] || _ush_done
 }
 
 ##
