@@ -197,8 +197,8 @@ _ush_task() {
 _ush_done() {
 	[ -n "$_task_current" ] || _die "no active task"
 	local status=DONE; $_task_repeat && status=REPEAT
-	_ush_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 	echo "TASK: $_task_current > $status"
+	_ush_save-var "$_task_current" "$status" "$_task_save_to" || _die "failed to write: $_task_save_to"
 	_task_current=""
 	_task_repeat=false
 }
