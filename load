@@ -123,7 +123,7 @@ _ush_DEBUG=false
 				fi
 
 				$verbose && echo "[INFO] $label: loading '$file' with prefix '$prefix' ..."
-				loader="@ush_v0.7.0_load --base '$base' --prefix '$prefix' --cache-ttl '$cacheTTL'"
+				loader="@ush_v0.7.0_load --base '$base' --prefix '$prefix' --cache-ttl $cacheTTL"
 				if $cache
 					then loader="$loader --cache"
 					else loader="$loader --no-cache"
@@ -134,7 +134,7 @@ _ush_DEBUG=false
 				if $cache; then # Handle cache
 					$_ush_DEBUG && rm -rf "$cacheDir"
 					cacheFile="$cacheDir/$token.sh"
-					if [[ -f "$cacheFile" && ( "$cacheTTL" -lt 0 || "$cacheTTL" -ge "$(("$now" - "$(date -r "$cacheFile" +%s)"))" ) ]]; then
+					if [[ -f "$cacheFile" && ( $cacheTTL -lt 0 || $cacheTTL -ge $(($now - $(date -r "$cacheFile" +%s))) ) ]]; then
 						source "$cacheFile"
 						$verbose && echo "[INFO] $label: cache loaded: '$cacheFile'"
 					else # Cache is not present OR expired
