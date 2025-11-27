@@ -150,7 +150,7 @@ _ush_load-var() {
 }
 
 _ush_subst() {
-	local pat="{{%s}}" # find pattern
+	local pat="{{[[:space:]]*%s[[:space:]]*}}" # find pattern
 	local sep="="      # key-value separator
 	local arg key value find sedx
 	while [ $# -gt 0 ]; do
