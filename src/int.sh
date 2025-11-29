@@ -219,6 +219,22 @@ _ush_fcd() {
 	cd "$dest"
 }
 
+_ush_shed() {
+	if [ -z "$1" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		cat <<- EOF
+		Create/Edit a shell script.
+		Usage:
+		  $0 <scriptFile>
+		EOF
+		return 1
+	fi
+	if [ ! -f "$1" ]; then
+		echo '#!/usr/bin/env bash\n' > "$1"
+		chmod u+x "$1"
+	fi
+	"$EDITOR" "$1"
+}
+
 # site health checker
 _ush_http() {
 	if [ -z "$1" ] || [ "$1" = "-h" ]; then
