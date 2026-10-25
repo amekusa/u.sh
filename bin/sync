@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+dry=false
+
+_help() {
+	local exec="$(basename "$0")"
+	cat <<- EOF
+	${exec}
+	Synchronize files and folders
+
+	Usage:
+	  ${exec} [options] <src> [src2...] <dst>
+
+	Examples:
+	  ${exec} -m copy ~/Documents ~/Backup
+	  ${exec} -m backup -e 'dist,*.zip' ~/Projects ~/Backup
+
+	Options:
+	  -m, --mode:
+	    Possible values:
+	      c, copy:   Symply copy <src> to <dst>. This is the default
+	      m, mirror: Mirror <src> to <dst>
+	      b, backup: Mirror, but with some exclusions
+	      move:      Copy, but delete <src> afterward
+
+	  -e, --exclude:
+	    Comma-separated list of file patterns to exclude
+
+	  -n, --dry-run:
+	    Print internal commands without running them
+
+	  -h, --help:
+	    Show this help
+
+	EOF
+}
+
+_cmd() {
+	if "$dry"; then
+		printf "[DryRun] %s\n" "$*"
+	else
+		"$@"
+	fi
+}
+
+_sync() {
+	local each arr
+
+	local files=()
+	local mode=copy
+	local opts=(-av) # rsync options
+
+	# check if rsync supports --info flag (v3.1.0+)
+	if rsync --help 2>&1 | grep -q -- "--info="
+		then opts+=(--info=progress2)
+		else opts+=(--progress)
+	fi
+
+	local exclude=(
+		".DS_Store"
+		".Spotlight-V100"
+		".Trashes"
+		"Thumbs.db"
+	)
+
+	if [ $# -eq 0 ]; then
+		_help; return 1
+	fi
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-m|--mode)
+			case "$2" in
+			c|copy)
+				mode=copy
+				;;
+			m|mirror)
+				mode=mirror
+				opts+=(-u --delete --delete-excluded)
+				;;
+			b|backup)
+				mode=backup
+				opts+=(-u --delete --delete-excluded)
+				exclude+=(
+					"node_modules"
+					"*.log"
+					"*.tmp"
+				)
+				;;
+			move)
+				mode=move
+				;;
+			*)
+				printf "[Error] Invalid argument: %s\n" "$2" >&2
+				return 1
+				;;
+			esac
+			shift
+			;;
+		-e|--exclude)
+			IFS=',' read -ra arr <<< "$2"
+			exclude+=("${arr[@]}")
+			shift
+			;;
+		-n|--dry-run)
+			dry=true
+			;;
+		-h|--help)
+			_help; return 1
+			;;
+		-*)
+			printf "[Error] Invalid argument: %s\n" "$1" >&2
+			return 1
+			;;
+		*)
+			files+=("$1")
+			;;
+		esac
+		shift
+	done
+
+	if [ ${#files[@]} -lt 2 ]; then
+		printf "[Error] You must provide at least one source and one destination.\n" >&2
+		return 1
+	fi
+
+	local dst="${files[-1]}"
+	unset 'files[${#files[@]}-1]' # remove last
+
+	for each in "${exclude[@]}"; do
+		opts+=("--exclude=$each")
+	done
+
+	if _cmd rsync "${opts[@]}" "${files[@]}" "$dst"; then
+		if [ "$mode" = move ]; then
+			_cmd rm -r "${files[@]}"
+		fi
+	else
+		printf "[Error] 'rsync' cmmand failed.\n" >&2
+		return 1
+	fi
+
+	printf "Sync complete.\n"
+	return 0
+}
+
+_sync "$@"
