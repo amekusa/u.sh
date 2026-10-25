@@ -3,36 +3,36 @@
 dry=false
 
 _help() {
-	local exec="$(basename "$0")"
-	cat <<- EOF
-	${exec}
-	Synchronize files and folders
+	cat << EOF
+=== u.sh :: sync ===
+Synchronize files and folders
+@author github.com/amekusa
 
-	Usage:
-	  ${exec} [options] <src> [src2...] <dst>
+Usage:
+  sync [options] <src> [src2...] <dst>
 
-	Examples:
-	  ${exec} -m copy ~/Documents ~/Backup
-	  ${exec} -m backup -e 'dist,*.zip' ~/Projects ~/Backup
+Examples:
+  sync -m copy ~/Documents ~/Backup
+  sync -m backup -e 'dist,*.zip' ~/Projects ~/Backup
 
-	Options:
-	  -m, --mode:
-	    Possible values:
-	      c, copy:   Symply copy <src> to <dst>. This is the default
-	      m, mirror: Mirror <src> to <dst>
-	      b, backup: Mirror, but with some exclusions
-	      move:      Copy, but delete <src> afterward
+Options:
+  -m, --mode:
+    Possible values:
+      c, copy:   Symply copy <src> to <dst>. This is the default
+      m, mirror: Mirror <src> to <dst>
+      b, backup: Mirror, but with some exclusions
+      move:      Copy, but delete <src> afterward
 
-	  -e, --exclude:
-	    Comma-separated list of file patterns to exclude
+  -e, --exclude:
+    Comma-separated list of file patterns to exclude
 
-	  -n, --dry-run:
-	    Print internal commands without running them
+  -n, --dry-run:
+    Print internal commands without running them
 
-	  -h, --help:
-	    Show this help
+  -h, --help:
+    Show this help
 
-	EOF
+EOF
 }
 
 _cmd() {
@@ -43,7 +43,7 @@ _cmd() {
 	fi
 }
 
-_sync() {
+_main() {
 	local each arr
 
 	local files=()
@@ -143,4 +143,5 @@ _sync() {
 	return 0
 }
 
-_sync "$@"
+_main "$@"
+
